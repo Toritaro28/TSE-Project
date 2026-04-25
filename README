@@ -1,0 +1,192 @@
+HI 
+
+To setup you need to 
+1. download XAMPPA control panel (if you got other db system can ignore)
+2. paste the Database.sql to create database
+
+
+Context & Overview:
+I need you to understand and build a custom Attendance System. This is for a small, fast-growing startup. The tech stack is PHP, HTML, CSS, JavaScript, and MySQL. Because we are a startup, the system is strictly dual-based: "Employee" and "Boss/Admin." There is no public registration—accounts are created by the Boss. Everyone uses the exact same Login page (with Email/Password and a Forgot Password function), and the system simply redirects them to either the Boss Dashboard or the Employee Dashboard based on their role. Both roles will have a clear [Logout] button.
+Here is the complete breakdown of exactly how this system must work. Please do not miss any of these features.
+1. The Check-In Flow (QR + GPS + IP):
+I want a really seamless morning routine. We will paste a physical QR code in our office.
+When employees scan it, the link goes to our login page. If they have the "Remember Me" box checked from before, it skips the login screen and jumps straight to their Dashboard.
+Crucial Logic: Logging in does not auto-check them in. Once on the Dashboard, they will see their current stats and a big [ CHECK IN ] button.
+When they click it, the system validates two things: They must be within 200 meters of the office GPS coordinates, OR their device's IP must match our Company Wi-Fi IP. (Since IPs can change, the Boss has a button in the Admin panel to "Update Current Office IP"). If they pass, they get a success popup.
+We also need a [ CHECK OUT ] button for when they leave. If an employee forgets to check out, the system will auto-check them out at midnight, but it will deduct a tiny amount of points (e.g., -2 points) to remind them to do it next time. Also, the system must prevent double check-ins on the same day.
+2. Time & Point Rules (The Economy):
+Time tracking is tied to a point system. Let's assume work starts at 9:00 AM.
+Before/At 09:00 AM (On-time): +10 Points.
+09:01 AM - 10:00 AM (Grace Period): +7 Points (a slight deduction for being late).
+10:01 AM - 11:49 AM (Late): +5 Points.
+>= 11:50 AM (Absent): If they haven't checked in by 11:50, the system auto-marks them as Absent and deducts 2 or 5 points.
+On Leave (AL/MC/etc.): 0 points. The Check-In button is disabled for that day so they can't mess it up.
+3. The Streak & The "World Tree" (Gamification):
+This is where it gets fun. Every employee has a digital Plant on their dashboard.
+The Streak: If they check in on time for 5 days in a row, their daily points increase. Visually, the UI must show "10 + 5 Points" (Base + Streak Bonus) rather than just a flat 15, so they feel rewarded. If they hit a 30-day streak, they get a massive chunk of Bonus Points and unlock a popup badge (like "Monthly Iron Man").
+Note on Streaks: Weekends, Public Holidays, and Approved Leaves pause the streak (it doesn't break). But being Late (>9:00 AM) or Absent resets the streak to 0.
+The Tree Evolution: The plant grows over 7 stages (Sprout -> Small Tree -> Big Tree -> Blooming Tree -> Bigger Tree -> Blooming Bigger Tree -> World Tree). Each stage takes about a month of consistency.
+The Punishment & Memory Logic: If an employee is late or absent, their beautiful tree turns "Withered/Yellow" (CSS filter). If they do it again, the tree actually downgrades to the previous stage! However, the database must remember their plant_highest_stage. If they rebuild their streak, the tree instantly recovers and heals back to its former highest stage.
+4. The Rewards Store (Real-world value):
+Points aren't just for show; they can be used to buy real items (like a new iPhone) distributed at our Annual Dinner.
+The Boss can add items to the store (Image, Name, Price, Quantity).
+Employees can browse and click "Redeem". When they do, the points are deducted instantly, and the item's stock drops by 1. The status becomes "Pending".
+Refund Logic: Before the Boss clicks "Complete" (which happens at the Annual Dinner), the employee has the right to click [ Cancel ]. If cancelled, their points are fully refunded, and the item stock goes back up by 1.
+5. Leave Management & The Master Calendar:
+Applying for Leave: We don't restrict leave applications to the current year only. The Boss sets a rolling window (e.g., 3 months ahead) so employees in December can apply for January. When applying, the system must auto-check for conflicts (they can't apply if dates overlap with existing leaves, or if they don't have enough leave balance left). They must pick a reason or type their own.
+Boss Approval: The Boss gets a "Red Dot" notification for pending requests. If the Boss rejects a leave, they must provide a reason. Both Boss and Employee can view their full leave history.
+The Calendar UI: Everyone has a Calendar view on their dashboard (Boss sees everyone; Employees see their own). It defaults to the current month but can be toggled.
+Color & Icon Coding: You must use this exact UI mapping:
+🟩 Green + Check Icon: Present
+🟥 Red + Warning Icon: Absent (No show)
+🟦 Blue + Airplane Icon: Annual Leave (AL)
+🟨 Yellow + Pill/Stethoscope Icon: Medical Leave (MC)
+🟪 Purple + Star Icon: Public Holiday (PH)
+⬜ Gray + Wallet Icon: Unpaid Leave (UL)
+🔲 Transparent + Empty Calendar Icon: Future dates or Pre-joining days.
+That's the entire system. Let me know if any problem with understanding.
+
+
+Below's content is what i ask AI to write for your understanding:
+
+
+📋 System Specification: "Gamified Attendance & Leave Management System"
+
+Tech Stack: PHP, HTML, CSS, JavaScript, MySQL. Target Audience: A small,
+fast-growing startup. Core Philosophy: A dual-based (Employee/Admin) system
+combining strict enterprise-level attendance tracking with highly engaging
+RPG-style gamification (Plant Evolution & Rewards Store).
+
+1. 🔐 Authentication & Access Control
+
+  - Unified Login Portal: A single login page for both Employee and Boss. The
+    system redirects users to their respective dashboards based on their role
+    (enum: employee, admin).
+  - No Public Registration: Accounts are created manually by the Admin/HR.
+  - Login Methods: Username/Email and Password.
+  - Password Recovery: "Forgot Password" feature utilizing email reset links.
+  - Session Management: Both Employee and Boss have a visible [Logout] button.
+  - "Remember Me" Integration: If checked, a cookie/token is saved. This is
+    crucial for the seamless QR Check-in workflow.
+
+2. 📍 The Check-in & Check-out Workflow
+
+  - No Auto Check-in (Lazy Loading Logic): Logging in does not automatically
+    clock the user in.
+  - The QR Code Flow:
+    1.  Employee scans a physical QR Code pasted in the office (URL:
+        system.com/login.php?source=qr).
+    2.  System detects the "Remember Me" cookie and bypasses the login screen,
+        redirecting immediately to the Dashboard.
+    3.  Employee sees their Plant/Points status, then manually clicks a
+        prominent [ CHECK IN ] button.
+    4.  Clicking triggers JS Geolocation validation -> PHP processing -> Success
+        Popup.
+  - Dual Anti-Fraud Validation (Must pass at least one):
+      - GPS Radius: Must be within 200 meters of the configured office
+        coordinates.
+      - Company IP: Device's Public IP must match the Office Wi-Fi IP (Boss can
+        update the current office IP in the Admin panel in case of ISP dynamic
+        changes).
+  - Anti-Spam Check: System prevents multiple check-ins on the same day.
+  - Midnight Auto-Checkout: If an employee forgets to click [ CHECK OUT ] by the
+    end of the day, the system automatically checks them out at midnight and
+    applies a minor point penalty (e.g., -2 Points) to encourage the habit.
+
+3. ⏱️ Time, Points & Streak Engine (The Rules)
+
+  - Daily Check-in Tiers (Assuming 09:00 AM start time):
+      - <= 09:00 AM (On-time): +10 Points.
+      - 09:01 AM - 10:00 AM (Grace Period): +7 Points (slight deduction for
+        being late).
+      - 10:01 AM - 11:49 AM (Late): +5 Points.
+      - >= 11:50 AM (or no check-in at all): Auto-marked as Absent. Penalty: -2
+        or -5 Points.
+      - On Leave (AL/MC/etc.): 0 Points (No gain, no penalty). Check-in button
+        is disabled for the day.
+  - The Streak Engine (Consecutive On-Time Days):
+      - 5-Day Streak: From day 5 onwards, employee receives an extra 5 points.
+        UI requirement: It must be displayed as 10 + 5 Points (Base + Bonus) to
+        emphasize the achievement, NOT just a flat 15.
+      - 30-Day Streak: Unlocks a Bonus Point Reward (e.g., +100 Pts) and
+        triggers a popup unlocking an Achievement Badge (e.g., "Monthly Iron
+        Man").
+  - Streak Breakers & Pauses:
+      - Breakers: Any Late (>9:00 AM) or Absent status resets the current_streak
+        to 0.
+      - Pauses (Safe Days): Weekends, Public Holidays, and Approved Leaves pause
+        the streak. They do not break it.
+
+4. 🌳 Gamification: The "World Tree" Ecosystem
+
+Every employee has a digital plant on their dashboard representing their
+attendance health.
+
+  - The 7 Evolutionary Stages:
+    1.  Sprout (First 5 days) -> 2. Small Tree -> 3. Big Tree -> 4. Blooming Big
+        Tree -> 5. Bigger Tree -> 6. Blooming Bigger Tree -> 7. World Tree (Each
+        stage post-sprout requires 1 month of consistency).
+  - Punishment & Degradation:
+      - 1st Offense (Late/Absent): The plant state changes to
+        "Withered/Yellowish" (Visual CSS filter drop).
+      - 2nd Consecutive Offense: The plant Downgrades to the previous stage
+        (e.g., Big Tree shrinks back to Small Tree).
+  - Recovery & Memory System:
+      - Database must store plant_highest_stage alongside plant_current_stage.
+      - If a downgraded employee re-establishes their streak (e.g., hits 5 days
+        again), the plant instantly Recovers back to its healthy
+        plant_highest_stage.
+
+5. 🎁 Rewards Store (Points Redemption System)
+
+Points earned hold real value and can be exchanged for actual physical items
+(e.g., iPhone) distributed at the Annual Dinner.
+
+  - Admin/Boss Panel: Can add/edit/delete items (Name, Image URL, Price in
+    Points, Stock Quantity).
+  - Employee Panel: Can browse and click "Redeem".
+  - The Escrow & Refund Logic:
+      - When an employee redeems an item, points are immediately deducted, and
+        item stock is reduced by 1. Status becomes Pending.
+      - Cancellation: Before the Boss clicks 'Complete', the employee can click
+        [ Cancel ]. Points are fully refunded, and stock is returned +1.
+      - Completion: At the Annual Dinner, the Boss clicks [ Complete ] to
+        finalize the transaction.
+
+6. 📅 Leave Management System
+
+  - Dynamic Rolling Window: Instead of a strict yearly limit, the Boss
+    configures a sliding window (e.g., 3 Months). Employees in December can
+    apply for leaves in January.
+  - Conflict Prevention Logic: System automatically checks and blocks
+    applications if:
+      - The dates overlap with an already pending/approved leave.
+      - The user exceeds their remaining leave balance.
+  - Application Process: Employee must select Leave Type (AL, MC, etc.) and
+    provide a predefined or custom reason.
+  - Approval Workflow:
+      - Boss receives a Red Dot Notification on their dashboard for pending
+        requests.
+      - Boss can Approve or Reject. Rejections must include an Admin
+        Remark/Reason.
+      - Employee receives a notification regarding the decision. Both parties
+        can view the full Leave History.
+
+7. 🎨 UI/UX & Calendar Color Scheme
+
+Both dashboards feature an interactive Calendar (defaults to current month,
+toggleable). It serves as an Attendance Heatmap.
+
+  - Calendar Color Codes & Icons:
+      - 🟩 Green (fa-user-check): Present (On-time/Late)
+      - 🟥 Red (fa-user-times): Absent (No show / >= 11:50 AM)
+      - 🟦 Blue (fa-plane): Annual Leave (AL)
+      - 🟨 Yellow (fa-capsules): Medical Leave (MC)
+      - 🟪 Purple (fa-star): Public Holiday (PH)
+      - ⬜ Gray (fa-wallet): Unpaid Leave (UL)
+      - 🔲 Transparent/White (fa-calendar): Future dates / Pre-joining dates.
+  - Visibility:
+      - Employees see their personal Calendar, monthly/yearly attendance rate,
+        and remaining leave balances.
+      - Boss sees a Master Calendar showing daily company-wide attendance and
+        who is currently on leave.
