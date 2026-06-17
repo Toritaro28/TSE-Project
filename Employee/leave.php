@@ -7,6 +7,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'employee') {
     exit();
 }
 
+$active_page = 'leave';
 $user_id = $_SESSION['user_id'];
 $current_year = date('Y');
 $message = '';
@@ -170,28 +171,51 @@ foreach ($leave_history as $lr) {
       --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
       --font-body: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
       --font-mono: 'SF Mono', ui-monospace, 'JetBrains Mono', Menlo, monospace;
+
+      --sidebar-bg: oklch(13% 0.02 252);
+      --sidebar-fg: oklch(84% 0.006 250);
+      --sidebar-muted: oklch(60% 0.016 250);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
-      width: 100%; min-height: 100%;
+      width: 100%; height: 100%;
       font-family: var(--font-body);
       color: var(--fg);
-      background: var(--bg);
+      background: var(--bg-deep, var(--bg));
       -webkit-font-smoothing: antialiased;
-      overflow-x: hidden;
+      overflow: hidden;
     }
 
-    /* ---- Page shell (mobile-first) ---- */
-    .page {
-      max-width: 480px;
-      margin: 0 auto;
-      padding: 0 16px 100px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      min-height: 100vh;
+    /* ---- App Shell ---- */
+    .app { display: flex; height: 100vh; width: 100%; }
+
+    /* ---- Sidebar ---- */
+    .sidebar {
+      width: 250px; min-width: 250px; height: 100%;
+      background: var(--sidebar-bg); color: var(--sidebar-fg);
+      display: flex; flex-direction: column; padding: 26px 18px 18px;
+      gap: 5px; z-index: 10; border-right: 1px solid rgba(255,255,255,0.06);
     }
+    .sidebar-brand { display: flex; align-items: center; gap: 11px; padding: 0 8px 24px; font-family: var(--font-display); font-size: 19px; font-weight: 700; letter-spacing: -0.02em; color: #fff; }
+    .sidebar-brand .logo-icon { width: 38px; height: 38px; border-radius: 11px; background: linear-gradient(135deg, var(--accent), oklch(46% 0.15 158)); display: grid; place-items: center; font-size: 20px; }
+    .sidebar-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+    .sidebar-nav .nav-section { font-size: 10px; text-transform: uppercase; letter-spacing: 0.09em; color: var(--sidebar-muted); padding: 14px 10px 5px; font-weight: 600; }
+    .sidebar-nav a { display: flex; align-items: center; gap: 9px; width: 100%; padding: 10px 10px; border: none; border-radius: 9px; background: transparent; color: var(--sidebar-fg); font: 13px/1.4 var(--font-body); cursor: pointer; transition: background 0.15s; text-align: left; letter-spacing: -0.01em; text-decoration: none; }
+    .sidebar-nav a:hover { background: rgba(255,255,255,0.055); }
+    .sidebar-nav a.active { background: rgba(255,255,255,0.1); color: #fff; font-weight: 600; }
+    .sidebar-nav a .nav-icon { font-size: 16px; width: 22px; text-align: center; flex-shrink: 0; }
+    .sidebar-user { display: flex; align-items: center; gap: 10px; padding: 12px 8px; border-top: 1px solid rgba(255,255,255,0.07); margin-top: auto; }
+    .sidebar-user .avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), oklch(48% 0.13 165)); display: grid; place-items: center; font-size: 14px; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .sidebar-user .user-name { font-size: 13px; font-weight: 600; color: #fff; }
+    .sidebar-user .user-role { font-size: 10px; color: var(--sidebar-muted); }
+
+    /* ---- Main ---- */
+    .main { flex: 1; overflow-y: auto; overflow-x: hidden; background: var(--bg-gradient, var(--bg)); display: flex; flex-direction: column; }
+    .main-inner { padding: 24px 30px 36px; display: flex; flex-direction: column; gap: 20px; max-width: 1200px; width: 100%; }
+
+    /* ---- Page shell (mobile-first fallback) ---- */
+    .page { width: 100%; display: flex; flex-direction: column; gap: 16px; }
 
     /* ---- Top bar ---- */
     .topbar {
@@ -540,11 +564,23 @@ foreach ($leave_history as $lr) {
     .legend span { display: inline-flex; align-items: center; gap: 4px; }
     .legend .dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
 
+    /* ---- Bottom nav (mobile) ---- */
+    .bottom-nav {
+      display: none;
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
+      height: 64px; background: oklch(98% 0.003 250 / 0.92);
+      backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+      border-top: 1px solid rgba(0,0,0,0.06);
+      align-items: center; justify-content: space-around;
+      padding: 0 8px; padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    .bottom-nav a { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 10px; border: none; background: none; font: 10px/1 var(--font-body); color: var(--muted); cursor: pointer; transition: color 0.15s; font-weight: 500; text-decoration: none; }
+    .bottom-nav a .nav-icon { font-size: 20px; line-height: 1; }
+    .bottom-nav a.active { color: var(--accent); font-weight: 700; }
+
     /* ---- Responsive ---- */
     @media (min-width: 600px) {
-      .page {
-        max-width: 720px; padding: 0 24px 40px; gap: 20px;
-      }
+      .main-inner { padding: 24px 30px 36px; }
       .topbar { padding: 18px 0 12px; }
       .topbar .title { font-size: 20px; }
       .card { padding: 22px 24px; }
@@ -554,15 +590,21 @@ foreach ($leave_history as $lr) {
       .form-row { gap: 16px; }
     }
     @media (min-width: 1024px) {
-      .page {
-        max-width: 960px; padding: 0 32px 48px; gap: 24px;
-      }
       .card { padding: 26px 30px; }
       .card-title { font-size: 17px; }
       .balance-card .bc-value { font-size: 36px; }
       .form-row { grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
       table.leave-table { font-size: 14px; }
       table.leave-table thead th { font-size: 11px; }
+    }
+    @media (max-width: 800px) {
+      .sidebar { width: 210px; min-width: 210px; }
+      .main-inner { padding: 16px 12px 80px; }
+    }
+    @media (max-width: 660px) {
+      .sidebar { display: none; }
+      .bottom-nav { display: flex; }
+      .main-inner { padding: 14px 10px 80px; }
     }
   </style>
 </head>
@@ -577,16 +619,21 @@ foreach ($leave_history as $lr) {
   </div>
 
   <!-- ==========================================================
-       PAGE
+       APP SHELL
        ========================================================== -->
-  <div class="page">
+  <div class="app">
+    <?php include 'employee_sidebar.php'; ?>
 
-    <!-- Top bar -->
-    <header class="topbar">
-      <a class="back-btn" href="employee_dashboard.php" aria-label="Back">←</a>
-      <span class="title">📋 Leave Management</span>
-      <div class="spacer"></div>
-    </header>
+    <main class="main">
+      <div class="main-inner">
+        <div class="page">
+
+          <!-- Top bar -->
+          <header class="topbar">
+            <a class="back-btn" href="employee_dashboard.php" aria-label="Back">←</a>
+            <span class="title">📋 Leave Management</span>
+            <div class="spacer"></div>
+          </header>
 
     <!-- ======================================================
          SECTION 1 — LEAVE BALANCE CARDS
@@ -836,7 +883,18 @@ foreach ($leave_history as $lr) {
       </div>
     </section>
 
-  </div>
+        </div><!-- /.page -->
+      </div><!-- /.main-inner -->
+    </main>
+  </div><!-- /.app -->
+
+  <!-- Mobile bottom nav -->
+  <nav class="bottom-nav">
+    <a href="employee_dashboard.php"><span class="nav-icon">◈</span>Dashboard</a>
+    <a href="leave.php" class="active"><span class="nav-icon">📅</span>Leave</a>
+    <a href="rewards_store.php"><span class="nav-icon">🎁</span>Rewards</a>
+    <a href="../logout.php"><span class="nav-icon">🚪</span>Logout</a>
+  </nav>
 
   <!-- ==========================================================
        SCRIPTS
