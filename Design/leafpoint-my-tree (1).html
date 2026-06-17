@@ -1,0 +1,310 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>My Tree — LeafPoint</title>
+  <style>
+    :root {
+      --bg: oklch(97% 0.005 245);
+      --surface: rgba(255, 255, 255, 0.55);
+      --surface-hover: rgba(255, 255, 255, 0.74);
+      --surface-solid: #ffffff;
+      --fg: oklch(16% 0.018 252);
+      --fg-secondary: oklch(38% 0.022 250);
+      --muted: oklch(54% 0.016 250);
+      --border: rgba(255, 255, 255, 0.4);
+      --border-subtle: rgba(0, 0, 0, 0.05);
+      --accent: oklch(56% 0.19 148);
+      --accent-soft: oklch(74% 0.14 148);
+      --accent-glow: oklch(62% 0.21 148 / 0.4);
+      --gold: oklch(70% 0.19 82);
+      --radius-sm: 10px;
+      --radius-md: 16px;
+      --radius-lg: 22px;
+      --radius-xl: 28px;
+      --shadow-card: 0 2px 16px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.03);
+      --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+      --bottom-nav-h: 68px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; min-height: 100%;
+      font-family: var(--font-body);
+      color: var(--fg);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    .page { max-width: 480px; margin: 0 auto; padding: 0 16px 100px; display: flex; flex-direction: column; gap: 16px; min-height: 100vh; }
+    .topbar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; padding: 14px 0 10px; background: oklch(97% 0.005 245 / 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+    .topbar .back-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border-subtle); display: grid; place-items: center; font-size: 18px; cursor: pointer; transition: background 0.15s; }
+    .topbar .back-btn:hover { background: var(--surface-hover); }
+    .topbar .title { font-family: var(--font-display); font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
+    .topbar .settings-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border-subtle); display: grid; place-items: center; font-size: 18px; cursor: pointer; transition: background 0.15s; }
+    .card { background: var(--surface); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+    .card-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .card-title { font-family: var(--font-display); font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+    .card-subtitle { font-size: 11px; color: var(--muted); }
+
+    .tree-hero { position: relative; background: var(--surface); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--border); border-radius: var(--radius-xl); box-shadow: var(--shadow-card), 0 0 50px var(--accent-glow); padding: 20px 16px 16px; display: flex; flex-direction: column; align-items: center; gap: 12px; overflow: hidden; }
+    .tree-hero::before { content: ''; position: absolute; top: -40px; right: -30px; width: 200px; height: 200px; background: radial-gradient(circle, oklch(62% 0.18 148 / 0.1), transparent 70%); pointer-events: none; }
+    .tree-visual-wrap { width: 200px; height: 260px; display: grid; place-items: center; position: relative; z-index: 1; }
+    .tree-visual-wrap svg { width: 100%; height: 100%; display: block; transition: opacity 0.4s ease; }
+    .tree-visual-wrap svg.tree-hidden { display: none; }
+    .tree-visual-wrap svg * { transition: fill 0.5s ease, stroke 0.5s ease, opacity 0.5s ease; }
+
+    .tree-hero[data-health="healthy"] .tree-visual-wrap { --canopy-green: oklch(58% 0.17 142); --canopy-mid: oklch(52% 0.14 144); --canopy-dark: oklch(45% 0.12 146); --trunk-fill: #5D4037; --trunk-dark: #4E342E; --blossom-fill: oklch(79% 0.11 8 / 0.85); --magic-fill: oklch(74% 0.08 280 / 0.8); --glow-color: oklch(62% 0.2 148 / 0.35); }
+    .tree-hero[data-health="withered"] .tree-visual-wrap { --canopy-green: oklch(68% 0.1 88); --canopy-mid: oklch(64% 0.09 90); --canopy-dark: oklch(60% 0.08 85); --trunk-fill: #7B6B5A; --trunk-dark: #6B5D50; --blossom-fill: oklch(70% 0.05 80 / 0.3); --magic-fill: oklch(68% 0.04 270 / 0.3); --glow-color: oklch(68% 0.1 85 / 0.1); }
+    .tree-hero[data-health="recovering"] .tree-visual-wrap { --canopy-green: oklch(62% 0.14 140); --canopy-mid: oklch(56% 0.12 143); --canopy-dark: oklch(50% 0.11 145); --trunk-fill: #6D5A4A; --trunk-dark: #5D4C3E; --blossom-fill: oklch(78% 0.10 10 / 0.6); --magic-fill: oklch(72% 0.07 278 / 0.55); --glow-color: oklch(62% 0.2 148 / 0.5); }
+    .tree-hero[data-health="recovering"] .tree-visual-wrap { animation: recoveryPulse 1.3s ease-in-out infinite; }
+    @keyframes recoveryPulse { 0%, 100% { filter: drop-shadow(0 0 6px oklch(62% 0.2 148 / 0.25)); } 50% { filter: drop-shadow(0 0 20px oklch(62% 0.2 148 / 0.55)); } }
+    @keyframes treeBreathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.012); } }
+    .tree-hero[data-health="healthy"] .tree-visual-wrap { animation: treeBreathe 4s ease-in-out infinite; }
+
+    .fallen-leaves { position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; opacity: 0; transition: opacity 0.4s; pointer-events: none; z-index: 0; }
+    .tree-hero[data-health="withered"] .fallen-leaves { opacity: 0.7; }
+    .fallen-leaf { width: 14px; height: 8px; background: oklch(68% 0.1 88); border-radius: 2px 50% 50% 2px; animation: leafFall 2.5s ease-in-out infinite; animation-delay: var(--delay, 0s); transform: rotate(var(--rot, -20deg)); }
+    @keyframes leafFall { 0%, 100% { transform: rotate(var(--rot, -20deg)) translateY(0); opacity: 0.7; } 50% { transform: rotate(var(--rot, -20deg)) translateY(6px); opacity: 0.3; } }
+    .new-growth-sparkles { position: absolute; top: 30px; left: 50%; transform: translateX(-50%); display: flex; gap: 4px; opacity: 0; transition: opacity 0.4s; pointer-events: none; z-index: 2; }
+    .tree-hero[data-health="recovering"] .new-growth-sparkles { opacity: 0.8; }
+    .sparkle { width: 6px; height: 6px; border-radius: 50%; background: oklch(72% 0.18 140); animation: sparklePulse 0.9s ease-in-out infinite; animation-delay: var(--sdelay, 0s); }
+    @keyframes sparklePulse { 0%, 100% { transform: scale(1); opacity: 0.6; } 50% { transform: scale(1.8); opacity: 1; } }
+
+    .tree-info-row { display: flex; flex-direction: column; align-items: center; gap: 4px; z-index: 1; text-align: center; }
+    .tree-stage-name { font-family: var(--font-display); font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
+    .tree-health-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+    .tree-health-badge.h { background: oklch(92% 0.06 148); color: oklch(36% 0.1 148); }
+    .tree-health-badge.w { background: oklch(92% 0.06 82); color: oklch(40% 0.12 80); }
+    .tree-health-badge.r { background: oklch(93% 0.05 170); color: oklch(38% 0.1 170); }
+    .tree-meta-row { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; z-index: 1; }
+    .tree-meta-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .tree-meta-item .ml { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 700; }
+    .tree-meta-item .mv { font-family: var(--font-display); font-size: 17px; font-weight: 700; }
+    .tree-progress-wrap { width: 100%; display: flex; flex-direction: column; gap: 4px; z-index: 1; }
+    .tree-progress-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); font-weight: 600; }
+    .tree-progress-bar { width: 100%; height: 8px; border-radius: 999px; background: oklch(91% 0.008 245); overflow: hidden; }
+    .tree-progress-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent), oklch(64% 0.18 150)); transition: width 0.5s ease; }
+
+    .stage-selector { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; z-index: 1; width: 100%; padding: 0; }
+    .stage-select-btn { width: 38px; height: 38px; border-radius: 50%; border: 2px solid var(--border-subtle); background: var(--surface-solid); font-family: var(--font-display); font-size: 14px; font-weight: 700; color: var(--muted); cursor: pointer; transition: all 0.2s ease; display: grid; place-items: center; flex-shrink: 0; }
+    .stage-select-btn:hover { border-color: var(--accent-soft); color: var(--fg); transform: translateY(-2px); }
+    .stage-select-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 0 18px var(--accent-glow); transform: translateY(-2px); }
+    .stage-selector-label { width: 100%; text-align: center; font-size: 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px; }
+
+    .stage-path-scroll { display: flex; gap: 4px; overflow-x: auto; padding: 4px 0; -webkit-overflow-scrolling: touch; scrollbar-width: none; z-index: 1; width: 100%; justify-content: center; }
+    .stage-path-scroll::-webkit-scrollbar { display: none; }
+    .stage-step { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+    .stage-dot { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-size: 14px; background: oklch(91% 0.006 250); color: var(--muted); border: 2px solid transparent; cursor: pointer; transition: all 0.3s; font-family: var(--font-display); flex-shrink: 0; }
+    .stage-dot.earned { background: oklch(89% 0.05 148); color: oklch(40% 0.1 148); border-color: oklch(80% 0.1 148); }
+    .stage-dot.current { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 0 16px var(--accent-glow); animation: dotPulse 2.2s ease-in-out infinite; }
+    @keyframes dotPulse { 0%, 100% { box-shadow: 0 0 10px var(--accent-glow); } 50% { box-shadow: 0 0 24px oklch(62% 0.22 148 / 0.5); } }
+    .stage-dot.downgraded { background: oklch(87% 0.04 85); color: oklch(42% 0.08 80); border-color: oklch(79% 0.08 85); }
+    .stage-connector { width: 10px; height: 2px; background: oklch(89% 0.006 250); border-radius: 1px; }
+    .stage-connector.earned { background: oklch(80% 0.1 148); }
+    .stage-step:last-child .stage-connector { display: none; }
+
+    .health-toggles { display: flex; gap: 6px; justify-content: center; z-index: 1; flex-wrap: wrap; }
+    .health-toggle { padding: 6px 12px; border-radius: 999px; border: 1.5px solid var(--border-subtle); background: var(--surface-solid); font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.15s; color: var(--fg-secondary); }
+    .health-toggle:hover { border-color: var(--accent-soft); }
+    .health-toggle.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    .recovery-timeline { display: flex; flex-direction: column; gap: 0; position: relative; }
+    .recovery-timeline::before { content: ''; position: absolute; left: 19px; top: 12px; bottom: 12px; width: 2px; background: oklch(88% 0.006 250); border-radius: 1px; }
+    .recovery-step { display: flex; gap: 12px; padding: 10px 0; position: relative; }
+    .recovery-step .step-dot { width: 40px; height: 40px; border-radius: 50%; background: var(--surface-solid); border: 2px solid var(--border-subtle); display: grid; place-items: center; font-size: 18px; flex-shrink: 0; z-index: 1; }
+    .recovery-step .step-content { flex: 1; min-width: 0; }
+    .recovery-step .step-title { font-size: 13px; font-weight: 700; color: var(--fg); }
+    .recovery-step .step-desc { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    .achievements-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .ach-item { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: var(--radius-sm); background: rgba(0,0,0,0.018); border: 1px solid transparent; transition: all 0.15s; }
+    .ach-item.earned { border-color: oklch(84% 0.1 82 / 0.4); background: oklch(96% 0.03 82 / 0.2); }
+    .ach-item.locked { opacity: 0.5; }
+    .ach-item .ach-icon { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-size: 18px; background: oklch(92% 0.03 250); flex-shrink: 0; }
+    .ach-item.earned .ach-icon { background: oklch(92% 0.06 82); }
+    .ach-item .ach-text { flex: 1; min-width: 0; }
+    .ach-item .ach-name { font-size: 12px; font-weight: 700; color: var(--fg); }
+    .ach-item .ach-sub { font-size: 10px; color: var(--muted); }
+
+    .badge-wall { display: flex; gap: 6px; flex-wrap: wrap; }
+    .badge-icon { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-size: 17px; background: oklch(91% 0.006 250); transition: transform 0.15s; cursor: default; }
+    .badge-icon.owned { background: oklch(91% 0.06 82); }
+    .badge-icon:hover { transform: scale(1.15); }
+
+    .history-timeline { display: flex; flex-direction: column; gap: 0; position: relative; }
+    .history-timeline::before { content: ''; position: absolute; left: 17px; top: 8px; bottom: 8px; width: 2px; background: oklch(85% 0.08 148 / 0.5); border-radius: 1px; }
+    .history-entry { display: flex; gap: 10px; padding: 8px 0; position: relative; align-items: center; }
+    .history-entry .h-dot { width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; font-size: 16px; flex-shrink: 0; z-index: 1; }
+    .history-entry .h-content { flex: 1; }
+    .history-entry .h-title { font-size: 12px; font-weight: 700; color: var(--fg); }
+    .history-entry .h-date { font-size: 10px; color: var(--muted); }
+
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 30; height: var(--bottom-nav-h); background: oklch(98% 0.003 250 / 0.88); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border-top: 1px solid rgba(0,0,0,0.06); display: flex; align-items: center; justify-content: space-around; padding: 0 8px; padding-bottom: env(safe-area-inset-bottom, 0px); }
+    .bottom-nav .nav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 10px; border: none; background: none; font: 10px/1 var(--font-body); color: var(--muted); cursor: pointer; transition: color 0.15s; font-weight: 500; min-width: 56px; }
+    .bottom-nav .nav-item .nav-icon { font-size: 20px; line-height: 1; }
+    .bottom-nav .nav-item.active { color: var(--accent); font-weight: 700; }
+
+    @media (min-width: 600px) { .page { max-width: 720px; padding: 0 24px 40px; gap: 20px; } .bottom-nav { display: none; } .topbar { padding: 18px 0 12px; } .topbar .title { font-size: 20px; } .tree-hero { flex-direction: row; padding: 24px 28px 20px; gap: 24px; } .tree-visual-wrap { width: 180px; height: 240px; flex-shrink: 0; } .tree-info-row { align-items: flex-start; text-align: left; } .tree-meta-row { justify-content: flex-start; } .tree-stage-name { font-size: 24px; } .stage-selector { justify-content: flex-start; } .stage-path-scroll { justify-content: flex-start; } .achievements-grid { grid-template-columns: 1fr 1fr 1fr; } .card { padding: 22px 24px; } }
+    @media (min-width: 1024px) { .page { max-width: 960px; padding: 0 32px 48px; gap: 24px; } .tree-hero { padding: 32px 36px 24px; gap: 36px; } .tree-visual-wrap { width: 240px; height: 300px; } .tree-stage-name { font-size: 28px; } .card-title { font-size: 17px; } .achievements-grid { grid-template-columns: repeat(4, 1fr); } .desktop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; } }
+  </style>
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <button class="back-btn" aria-label="Back" onclick="history.back()">←</button>
+    <span class="title">🌳 My Tree</span>
+    <button class="settings-btn" aria-label="Settings">⚙</button>
+  </header>
+
+  <section class="tree-hero" id="tree-hero" data-health="healthy" data-stage="4">
+    <div class="fallen-leaves"><span class="fallen-leaf" style="--rot:-25deg;--delay:0s;"></span><span class="fallen-leaf" style="--rot:15deg;--delay:0.6s;"></span><span class="fallen-leaf" style="--rot:-10deg;--delay:1.2s;"></span></div>
+    <div class="new-growth-sparkles"><span class="sparkle" style="--sdelay:0s;"></span><span class="sparkle" style="--sdelay:0.3s;"></span><span class="sparkle" style="--sdelay:0.6s;"></span></div>
+
+    <div class="tree-visual-wrap" id="tree-svg-container">
+      <!-- Stage 1: Sprout --><svg viewBox="0 0 200 260" xmlns="http://www.w3.org/2000/svg" class="tree-svg" data-stage="1"><ellipse cx="100" cy="230" rx="45" ry="6" fill="#00000015"/><ellipse cx="100" cy="224" rx="28" ry="6" fill="var(--trunk-dark)"/><path d="M78 218 Q78 230 86 230 L114 230 Q122 230 122 218 Z" fill="var(--trunk-fill)"/><ellipse cx="100" cy="218" rx="22" ry="4" fill="var(--trunk-dark)"/><path d="M100 218 Q98 195 100 175" stroke="var(--trunk-fill)" stroke-width="5" stroke-linecap="round" fill="none"/><ellipse cx="88" cy="180" rx="16" ry="7" fill="var(--canopy-green)" transform="rotate(-30 88 180)"/><ellipse cx="112" cy="174" rx="14" ry="6" fill="var(--canopy-mid)" transform="rotate(25 112 174)"/><circle cx="100" cy="168" r="2.5" fill="var(--canopy-green)" opacity="0.7"/></svg>
+      <!-- Stage 2: Sapling --><svg viewBox="0 0 200 260" xmlns="http://www.w3.org/2000/svg" class="tree-svg" data-stage="2"><ellipse cx="100" cy="235" rx="48" ry="7" fill="#00000015"/><ellipse cx="100" cy="228" rx="30" ry="6" fill="var(--trunk-dark)"/><path d="M76 222 Q76 234 86 234 L114 234 Q124 234 124 222 Z" fill="var(--trunk-fill)"/><ellipse cx="100" cy="222" rx="24" ry="4" fill="var(--trunk-dark)"/><path d="M100 222 Q98 198 100 170 Q102 148 100 130" stroke="var(--trunk-fill)" stroke-width="7" stroke-linecap="round" fill="none"/><path d="M100 188 Q88 176 76 172" stroke="var(--trunk-fill)" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M100 176 Q112 164 122 160" stroke="var(--trunk-fill)" stroke-width="3.5" stroke-linecap="round" fill="none"/><ellipse cx="76" cy="170" rx="20" ry="10" fill="var(--canopy-green)" transform="rotate(-20 76 170)"/><ellipse cx="122" cy="158" rx="18" ry="9" fill="var(--canopy-mid)" transform="rotate(18 122 158)"/><ellipse cx="100" cy="128" rx="22" ry="12" fill="var(--canopy-dark)"/><ellipse cx="88" cy="136" rx="14" ry="7" fill="var(--canopy-green)" transform="rotate(-35 88 136)" opacity="0.7"/></svg>
+      <!-- Stage 3: Young Tree --><svg viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg" class="tree-svg" data-stage="3"><ellipse cx="100" cy="252" rx="50" ry="7" fill="#00000015"/><ellipse cx="100" cy="244" rx="32" ry="7" fill="var(--trunk-dark)"/><path d="M74 238 Q74 250 86 250 L114 250 Q126 250 126 238 Z" fill="var(--trunk-fill)"/><ellipse cx="100" cy="238" rx="26" ry="4.5" fill="var(--trunk-dark)"/><path d="M100 238 Q97 210 100 180 Q103 152 100 118" stroke="var(--trunk-fill)" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M97 208 Q94 192 96 176" stroke="var(--trunk-fill)" stroke-width="7" stroke-linecap="round" fill="none"/><path d="M100 198 Q84 180 68 174" stroke="var(--trunk-fill)" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M100 186 Q116 170 132 164" stroke="var(--trunk-fill)" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M100 168 Q84 152 66 140" stroke="var(--trunk-fill)" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M100 156 Q116 140 134 130" stroke="var(--trunk-fill)" stroke-width="4" stroke-linecap="round" fill="none"/><ellipse cx="68" cy="172" rx="24" ry="14" fill="var(--canopy-green)" transform="rotate(-15 68 172)"/><ellipse cx="132" cy="162" rx="22" ry="13" fill="var(--canopy-mid)" transform="rotate(15 132 162)"/><ellipse cx="66" cy="138" rx="20" ry="12" fill="var(--canopy-dark)" transform="rotate(-22 66 138)"/><ellipse cx="134" cy="128" rx="19" ry="11" fill="var(--canopy-green)" transform="rotate(20 134 128)"/><ellipse cx="100" cy="112" rx="26" ry="16" fill="var(--canopy-mid)"/><ellipse cx="84" cy="125" rx="17" ry="10" fill="var(--canopy-green)" opacity="0.6" transform="rotate(-30 84 125)"/><ellipse cx="118" cy="120" rx="15" ry="9" fill="var(--canopy-dark)" opacity="0.5" transform="rotate(25 118 120)"/></svg>
+      <!-- Stage 4: Blooming Tree --><svg viewBox="0 0 220 290" xmlns="http://www.w3.org/2000/svg" class="tree-svg" data-stage="4"><ellipse cx="110" cy="264" rx="55" ry="8" fill="#00000015"/><ellipse cx="110" cy="256" rx="36" ry="7" fill="var(--trunk-dark)"/><path d="M82 248 Q82 262 92 262 L128 262 Q138 262 138 248 Z" fill="var(--trunk-fill)"/><ellipse cx="110" cy="248" rx="28" ry="5" fill="var(--trunk-dark)"/><path d="M103 248 Q100 218 95 182 Q90 148 88 114 Q84 92 86 76" stroke="var(--trunk-fill)" stroke-width="11" stroke-linecap="round" fill="none"/><path d="M117 248 Q114 218 110 182 Q106 148 104 114 Q100 92 102 76" stroke="var(--trunk-dark)" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M95 152 Q78 134 58 118" stroke="var(--trunk-fill)" stroke-width="5.5" stroke-linecap="round" fill="none"/><path d="M106 138 Q124 120 142 106" stroke="var(--trunk-dark)" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M95 114 Q76 96 64 78" stroke="var(--trunk-fill)" stroke-width="4.5" stroke-linecap="round" fill="none"/><path d="M104 102 Q118 82 128 64" stroke="var(--trunk-dark)" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M88 86 Q70 70 58 52" stroke="var(--trunk-fill)" stroke-width="3" stroke-linecap="round" fill="none"/><circle cx="84" cy="70" r="24" fill="var(--canopy-green)"/><circle cx="106" cy="54" r="28" fill="var(--canopy-dark)"/><circle cx="126" cy="66" r="22" fill="var(--canopy-mid)"/><circle cx="62" cy="58" r="18" fill="var(--canopy-green)"/><circle cx="142" cy="60" r="16" fill="var(--canopy-mid)"/><circle cx="94" cy="40" r="20" fill="var(--canopy-dark)"/><circle cx="114" cy="36" r="18" fill="var(--canopy-green)"/><circle cx="78" cy="32" r="14" fill="var(--canopy-mid)"/><circle cx="136" cy="48" r="13" fill="var(--canopy-green)"/><circle cx="80" cy="62" r="4.5" fill="var(--blossom-fill)"/><circle cx="106" cy="46" r="5.5" fill="var(--blossom-fill)"/><circle cx="128" cy="58" r="4" fill="var(--blossom-fill)"/><circle cx="64" cy="50" r="3.5" fill="var(--blossom-fill)"/><circle cx="140" cy="52" r="3" fill="var(--blossom-fill)"/><circle cx="94" cy="32" r="3.5" fill="var(--blossom-fill)"/><circle cx="116" cy="28" r="3" fill="var(--blossom-fill)"/><circle cx="74" cy="26" r="2.5" fill="var(--blossom-fill)"/></svg>
+      <!-- Stage 5: Ancient Oak --><svg viewBox="0 0 240 300" xmlns="http://www.w3.org/2000/svg" class="tree-svg" data-stage="5"><ellipse cx="120" cy="274" rx="60" ry="9" fill="#00000015"/><ellipse cx="120" cy="266" rx="40" ry="8" fill="var(--trunk-dark)"/><path d="M90 256 Q90 272 102 272 L138 272 Q150 272 150 256 Z" fill="var(--trunk-fill)"/><ellipse cx="120" cy="256" rx="30" ry="5.5" fill="var(--trunk-dark)"/><path d="M120 256 Q116 220 118 178 Q120 142 118 96" stroke="var(--trunk-fill)" stroke-width="16" stroke-linecap="round" fill="none"/><path d="M114 210 Q110 180 113 150" stroke="var(--trunk-dark)" stroke-width="12" stroke-linecap="round" fill="none"/><path d="M126 210 Q130 180 127 150" stroke="var(--trunk-fill)" stroke-width="10" stroke-linecap="round" fill="none"/><path d="M112 256 Q96 262 78 256" stroke="var(--trunk-fill)" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M128 256 Q144 262 162 256" stroke="var(--trunk-dark)" stroke-width="7" stroke-linecap="round" fill="none"/><path d="M118 186 Q96 166 68 152" stroke="var(--trunk-fill)" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M122 178 Q144 158 172 144" stroke="var(--trunk-dark)" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M118 148 Q92 128 58 110" stroke="var(--trunk-fill)" stroke-width="6" stroke-linecap="round" fill="none"/><path d="M122 140 Q148 120 182 104" stroke="var(--trunk-dark)" stroke-width="6" stroke-linecap="round" fill="none"/><path d="M118 120 Q98 104 78 82" stroke="var(--trunk-fill)" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M122 114 Q142 98 162 76" stroke="var(--trunk-dark)" stroke-width="5" stroke-linecap="round" fill="none"/><ellipse cx="68" cy="148" rx="32" ry="20" fill="var(--canopy-green)" transform="rotate(-10 68 148)"/><ellipse cx="172" cy="140" rx="30" ry="19" fill="var(--canopy-mid)" transform="rotate(10 172 140)"/><ellipse cx="58" cy="108" rx="28" ry="18" fill="var(--canopy-dark)" transform="rotate(-18 58 108)"/><ellipse cx="182" cy="102" rx="26" ry="17" fill="var(--canopy-green)" transform="rotate(15 182 102)"/><ellipse cx="78" cy="80" rx="26" ry="16" fill="var(--canopy-mid)" transform="rotate(-25 78 80)"/><ellipse cx="162" cy="76" rx="24" ry="15" fill="var(--canopy-dark)" transform="rotate(22 162 76)"/><ellipse cx="120" cy="56" rx="32" ry="20" fill="var(--canopy-green)"/><ellipse cx="100" cy="70" rx="22" ry="14" fill="var(--canopy-mid)" opacity="0.5" transform="rotate(-20 100 70)"/><ellipse cx="140" cy="66" rx="20" ry="13" fill="var(--canopy-dark)" opacity="0.45" transform="rotate(18 140 66)"/><circle cx="112" cy="170" r="5" fill="var(--trunk-dark)" opacity="0.5"/><circle cx="130" cy="162" r="4" fill="var(--trunk-dark)" opacity="0.4"/></svg>
+      <!-- Stage 6: Magical Blooming Tree --><svg viewBox="0 0 260 310" xmlns="http://www.w3.org/2000/svg" class="tree-svg" data-stage="6"><ellipse cx="130" cy="280" rx="65" ry="10" fill="#00000015"/><ellipse cx="130" cy="272" rx="42" ry="8" fill="var(--trunk-dark)"/><path d="M98 262 Q98 278 112 278 L148 278 Q162 278 162 262 Z" fill="var(--trunk-fill)"/><ellipse cx="130" cy="262" rx="32" ry="6" fill="var(--trunk-dark)"/><ellipse cx="130" cy="282" rx="68" ry="11" fill="var(--magic-fill)" opacity="0.06"/><path d="M130 262 Q125 222 128 178 Q131 140 128 90" stroke="var(--trunk-fill)" stroke-width="18" stroke-linecap="round" fill="none"/><path d="M122 210 Q118 180 122 148" stroke="var(--trunk-dark)" stroke-width="14" stroke-linecap="round" fill="none"/><path d="M138 210 Q142 180 138 148" stroke="var(--trunk-fill)" stroke-width="12" stroke-linecap="round" fill="none"/><path d="M120 262 Q102 270 80 260" stroke="var(--trunk-fill)" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M140 262 Q158 270 180 260" stroke="var(--trunk-dark)" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M128 192 Q104 170 70 150" stroke="var(--trunk-fill)" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M132 184 Q156 162 190 142" stroke="var(--trunk-dark)" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M128 154 Q98 132 60 108" stroke="var(--trunk-fill)" stroke-width="7" stroke-linecap="round" fill="none"/><path d="M132 148 Q162 126 200 102" stroke="var(--trunk-dark)" stroke-width="7" stroke-linecap="round" fill="none"/><path d="M128 126 Q106 108 82 84" stroke="var(--trunk-fill)" stroke-width="6" stroke-linecap="round" fill="none"/><path d="M132 120 Q154 102 178 78" stroke="var(--trunk-dark)" stroke-width="6" stroke-linecap="round" fill="none"/><path d="M130 106 Q112 90 96 66" stroke="var(--trunk-fill)" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M130 100 Q148 84 164 60" stroke="var(--trunk-dark)" stroke-width="5" stroke-linecap="round" fill="none"/><ellipse cx="70" cy="146" rx="36" ry="22" fill="var(--canopy-green)" transform="rotate(-10 70 146)"/><ellipse cx="190" cy="138" rx="34" ry="21" fill="var(--canopy-mid)" transform="rotate(10 190 138)"/><ellipse cx="60" cy="106" rx="32" ry="20" fill="var(--canopy-dark)" transform="rotate(-16 60 106)"/><ellipse cx="200" cy="100" rx="30" ry="19" fill="var(--canopy-green)" transform="rotate(14 200 100)"/><ellipse cx="82" cy="76" rx="28" ry="18" fill="var(--canopy-mid)" transform="rotate(-24 82 76)"/><ellipse cx="178" cy="72" rx="26" ry="17" fill="var(--canopy-dark)" transform="rotate(20 178 72)"/><ellipse cx="130" cy="50" rx="36" ry="22" fill="var(--canopy-green)"/><ellipse cx="106" cy="62" rx="24" ry="15" fill="var(--canopy-mid)" opacity="0.45" transform="rotate(-20 106 62)"/><ellipse cx="154" cy="58" rx="22" ry="14" fill="var(--canopy-dark)" opacity="0.4" transform="rotate(18 154 58)"/><circle cx="68" cy="118" r="11" fill="var(--magic-fill)" opacity="0.8"/><circle cx="84" cy="94" r="8" fill="var(--magic-fill)" opacity="0.7"/><circle cx="192" cy="110" r="10" fill="var(--magic-fill)" opacity="0.8"/><circle cx="176" cy="88" r="7" fill="var(--magic-fill)" opacity="0.65"/><circle cx="82" cy="68" r="9" fill="var(--magic-fill)" opacity="0.75"/><circle cx="178" cy="62" r="8" fill="var(--magic-fill)" opacity="0.7"/><circle cx="130" cy="42" r="11" fill="var(--magic-fill)" opacity="0.85"/><circle cx="110" cy="50" r="7" fill="var(--magic-fill)" opacity="0.6"/><circle cx="150" cy="46" r="8" fill="var(--magic-fill)" opacity="0.65"/></svg>
+      <!-- Stage 7: World Tree --><svg viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg" class="tree-svg" data-stage="7"><ellipse cx="150" cy="310" rx="75" ry="11" fill="#00000015"/><ellipse cx="150" cy="300" rx="48" ry="9" fill="var(--trunk-dark)"/><path d="M112 288 Q112 306 128 306 L172 306 Q188 306 188 288 Z" fill="var(--trunk-fill)"/><ellipse cx="150" cy="288" rx="38" ry="7" fill="var(--trunk-dark)"/><ellipse cx="150" cy="240" rx="110" ry="140" fill="var(--magic-fill)" opacity="0.08"/><ellipse cx="150" cy="240" rx="130" ry="160" fill="var(--magic-fill)" opacity="0.04"/><path d="M150 288 Q144 240 148 190 Q152 140 150 80" stroke="var(--trunk-fill)" stroke-width="22" stroke-linecap="round" fill="none"/><path d="M140 230 Q136 195 141 160" stroke="var(--trunk-dark)" stroke-width="17" stroke-linecap="round" fill="none"/><path d="M160 230 Q164 195 159 160" stroke="var(--trunk-fill)" stroke-width="15" stroke-linecap="round" fill="none"/><path d="M138 288 Q115 298 90 286" stroke="var(--trunk-fill)" stroke-width="12" stroke-linecap="round" fill="none"/><path d="M162 288 Q185 298 210 286" stroke="var(--trunk-dark)" stroke-width="11" stroke-linecap="round" fill="none"/><path d="M125 282 Q105 290 80 278" stroke="var(--trunk-fill)" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M175 282 Q195 290 220 278" stroke="var(--trunk-dark)" stroke-width="7" stroke-linecap="round" fill="none"/><path d="M148 210 Q118 185 80 160" stroke="var(--trunk-fill)" stroke-width="11" stroke-linecap="round" fill="none"/><path d="M152 202 Q182 178 220 154" stroke="var(--trunk-dark)" stroke-width="11" stroke-linecap="round" fill="none"/><path d="M148 168 Q110 140 60 108" stroke="var(--trunk-fill)" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M152 162 Q190 134 240 102" stroke="var(--trunk-dark)" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M148 136 Q118 112 88 80" stroke="var(--trunk-fill)" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M152 130 Q182 106 212 74" stroke="var(--trunk-dark)" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M150 112 Q130 92 110 64" stroke="var(--trunk-fill)" stroke-width="7" stroke-linecap="round" fill="none"/><path d="M150 106 Q170 86 190 58" stroke="var(--trunk-dark)" stroke-width="7" stroke-linecap="round" fill="none"/><path d="M150 96 Q135 80 120 54" stroke="var(--trunk-fill)" stroke-width="6" stroke-linecap="round" fill="none"/><path d="M150 92 Q165 76 180 50" stroke="var(--trunk-dark)" stroke-width="6" stroke-linecap="round" fill="none"/><ellipse cx="80" cy="156" rx="42" ry="26" fill="var(--canopy-green)" transform="rotate(-10 80 156)"/><ellipse cx="220" cy="150" rx="40" ry="25" fill="var(--canopy-mid)" transform="rotate(10 220 150)"/><ellipse cx="60" cy="108" rx="38" ry="24" fill="var(--canopy-dark)" transform="rotate(-16 60 108)"/><ellipse cx="240" cy="102" rx="36" ry="23" fill="var(--canopy-green)" transform="rotate(14 240 102)"/><ellipse cx="88" cy="76" rx="34" ry="22" fill="var(--canopy-mid)" transform="rotate(-24 88 76)"/><ellipse cx="212" cy="72" rx="32" ry="21" fill="var(--canopy-dark)" transform="rotate(20 212 72)"/><ellipse cx="110" cy="52" rx="30" ry="20" fill="var(--canopy-green)" transform="rotate(-30 110 52)"/><ellipse cx="190" cy="48" rx="28" ry="19" fill="var(--canopy-mid)" transform="rotate(26 190 48)"/><ellipse cx="150" cy="36" rx="40" ry="26" fill="var(--canopy-dark)"/><ellipse cx="130" cy="50" rx="26" ry="17" fill="var(--canopy-green)" opacity="0.4" transform="rotate(-18 130 50)"/><ellipse cx="170" cy="48" rx="24" ry="16" fill="var(--canopy-mid)" opacity="0.35" transform="rotate(16 170 48)"/><circle cx="78" cy="120" r="13" fill="var(--magic-fill)" opacity="0.8"/><circle cx="96" cy="94" r="10" fill="var(--magic-fill)" opacity="0.7"/><circle cx="222" cy="114" r="12" fill="var(--magic-fill)" opacity="0.8"/><circle cx="204" cy="90" r="9" fill="var(--magic-fill)" opacity="0.65"/><circle cx="112" cy="46" r="10" fill="var(--magic-fill)" opacity="0.75"/><circle cx="188" cy="42" r="9" fill="var(--magic-fill)" opacity="0.7"/><circle cx="150" cy="28" r="14" fill="var(--magic-fill)" opacity="0.9"/><circle cx="130" cy="36" r="8" fill="var(--magic-fill)" opacity="0.6"/><circle cx="170" cy="34" r="9" fill="var(--magic-fill)" opacity="0.65"/><circle cx="150" cy="28" r="5" fill="var(--gold)" opacity="0.8"/><circle cx="110" cy="46" r="3" fill="var(--gold)" opacity="0.5"/><circle cx="190" cy="42" r="3" fill="var(--gold)" opacity="0.5"/><circle cx="96" cy="94" r="2.5" fill="var(--gold)" opacity="0.4"/><circle cx="204" cy="90" r="2.5" fill="var(--gold)" opacity="0.4"/></svg>
+    </div>
+
+    <div style="flex:1;display:flex;flex-direction:column;gap:10px;min-width:0;z-index:1;">
+      <div class="tree-info-row">
+        <span class="tree-stage-name" id="stage-name">Blooming Tree</span>
+        <span class="tree-health-badge h" id="health-badge">🌱 Healthy</span>
+      </div>
+      <div class="tree-meta-row">
+        <div class="tree-meta-item"><span class="ml">Stage</span><span class="mv" style="color:var(--accent);" id="stage-num">4 / 7</span></div>
+        <div class="tree-meta-item"><span class="ml">Highest</span><span class="mv" style="color:var(--gold);" id="highest-stage">Stage 5</span></div>
+        <div class="tree-meta-item"><span class="ml">Streak</span><span class="mv" style="color:var(--gold);" id="streak-num">12 days</span></div>
+      </div>
+      <div class="stage-selector-label">Select Stage</div>
+      <div class="stage-selector" id="stage-selector">
+        <button class="stage-select-btn" data-stage="1" title="Sprout">🌱</button>
+        <button class="stage-select-btn" data-stage="2" title="Sapling">2</button>
+        <button class="stage-select-btn" data-stage="3" title="Young Tree">3</button>
+        <button class="stage-select-btn active" data-stage="4" title="Blooming Tree">4</button>
+        <button class="stage-select-btn" data-stage="5" title="Ancient Oak">5</button>
+        <button class="stage-select-btn" data-stage="6" title="Magical Blooming Tree">6</button>
+        <button class="stage-select-btn" data-stage="7" title="World Tree">7</button>
+      </div>
+      <div class="health-toggles" id="health-toggles">
+        <button class="health-toggle active" data-health="healthy">🌿 Healthy</button>
+        <button class="health-toggle" data-health="withered">🍂 Withered</button>
+        <button class="health-toggle" data-health="recovering">✨ Recovering</button>
+      </div>
+      <div class="tree-progress-wrap">
+        <div class="tree-progress-labels"><span>Stage progress</span><span id="progress-pct">57%</span></div>
+        <div class="tree-progress-bar"><div class="tree-progress-fill" id="progress-fill" style="width:57%;"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-header"><span class="card-title">🗺️ Stage Path</span></div>
+    <div class="stage-path-scroll" id="stage-path">
+      <div class="stage-step"><span class="stage-dot earned" data-stage="1">🌱</span><span class="stage-connector earned"></span></div>
+      <div class="stage-step"><span class="stage-dot earned" data-stage="2">2</span><span class="stage-connector earned"></span></div>
+      <div class="stage-step"><span class="stage-dot earned" data-stage="3">3</span><span class="stage-connector earned"></span></div>
+      <div class="stage-step"><span class="stage-dot current" data-stage="4">4</span><span class="stage-connector"></span></div>
+      <div class="stage-step"><span class="stage-dot" data-stage="5">5</span><span class="stage-connector"></span></div>
+      <div class="stage-step"><span class="stage-dot" data-stage="6">6</span><span class="stage-connector"></span></div>
+      <div class="stage-step"><span class="stage-dot" data-stage="7">7</span></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-header"><span class="card-title">🔄 Recovery System</span><span class="card-subtitle">Late/absent → gradual recovery</span></div>
+    <div class="recovery-timeline">
+      <div class="recovery-step"><div class="step-dot">⚠️</div><div class="step-content"><div class="step-title">1 late arrival</div><div class="step-desc">Tree shows yellow withered leaves</div></div></div>
+      <div class="recovery-step"><div class="step-dot">⬇️</div><div class="step-content"><div class="step-title">Repeated late / absent</div><div class="step-desc">Stage downgrade — tree shrinks one level</div></div></div>
+      <div class="recovery-step"><div class="step-dot">🌱</div><div class="step-content"><div class="step-title">Recovery: 3 consecutive on-time days</div><div class="step-desc">Tree enters recovering state with green sparkles</div></div></div>
+      <div class="recovery-step"><div class="step-dot">✅</div><div class="step-content"><div class="step-title">Full recovery: 7 consecutive on-time days</div><div class="step-desc">Tree returns to healthy state at current stage</div></div></div>
+    </div>
+  </section>
+
+  <div class="desktop-grid">
+    <section class="card">
+      <div class="card-header"><span class="card-title">🏆 Achievements</span></div>
+      <div class="achievements-grid">
+        <div class="ach-item earned"><div class="ach-icon">🔥</div><div class="ach-text"><div class="ach-name">5-Day Streak</div><div class="ach-sub">Earned</div></div></div>
+        <div class="ach-item earned"><div class="ach-icon">⚔️</div><div class="ach-text"><div class="ach-name">30-Day Iron Man</div><div class="ach-sub">Earned</div></div></div>
+        <div class="ach-item earned"><div class="ach-icon">🌳</div><div class="ach-text"><div class="ach-name">Tree Guardian</div><div class="ach-sub">Reached Stage 4</div></div></div>
+        <div class="ach-item locked"><div class="ach-icon">👑</div><div class="ach-text"><div class="ach-name">World Tree</div><div class="ach-sub">Reach Stage 7</div></div></div>
+      </div>
+    </section>
+    <section class="card">
+      <div class="card-header"><span class="card-title">🎖️ Badges</span></div>
+      <div class="badge-wall"><span class="badge-icon owned">🌱</span><span class="badge-icon owned">⭐</span><span class="badge-icon owned">🔥</span><span class="badge-icon owned">💪</span><span class="badge-icon">🏅</span><span class="badge-icon">🎯</span><span class="badge-icon">👑</span><span class="badge-icon">🌟</span></div>
+    </section>
+  </div>
+
+  <section class="card">
+    <div class="card-header"><span class="card-title">📜 Tree History</span></div>
+    <div class="history-timeline">
+      <div class="history-entry"><div class="h-dot">🌳</div><div class="h-content"><div class="h-title">Reached Blooming Tree (Stage 4)</div><div class="h-date">Mar 15, 2025</div></div></div>
+      <div class="history-entry"><div class="h-dot">⬆️</div><div class="h-content"><div class="h-title">Upgraded to Young Tree (Stage 3)</div><div class="h-date">Feb 28, 2025</div></div></div>
+      <div class="history-entry"><div class="h-dot">🍂</div><div class="h-content"><div class="h-title">Withered — 2 late arrivals</div><div class="h-date">Feb 20, 2025</div></div></div>
+      <div class="history-entry"><div class="h-dot">🌱</div><div class="h-content"><div class="h-title">Sprouted (Stage 1)</div><div class="h-date">Jan 10, 2025</div></div></div>
+    </div>
+  </section>
+</div>
+
+<nav class="bottom-nav">
+  <button class="nav-item"><span class="nav-icon">🏠</span>Home</button>
+  <button class="nav-item active"><span class="nav-icon">🌳</span>My Tree</button>
+  <button class="nav-item"><span class="nav-icon">📊</span>Stats</button>
+  <button class="nav-item"><span class="nav-icon">🏪</span>Store</button>
+  <button class="nav-item"><span class="nav-icon">👤</span>Profile</button>
+</nav>
+
+<script>
+(function() {
+  const treeHero = document.getElementById('tree-hero');
+  const container = document.getElementById('tree-svg-container');
+  const allSvgs = container.querySelectorAll('.tree-svg');
+  const stageNameEl = document.getElementById('stage-name');
+  const healthBadge = document.getElementById('health-badge');
+  const stageNumEl = document.getElementById('stage-num');
+  const progressFill = document.getElementById('progress-fill');
+  const progressPct = document.getElementById('progress-pct');
+  const stageNames = ['Sprout','Sapling','Young Tree','Blooming Tree','Ancient Oak','Magical Blooming Tree','World Tree'];
+  const healthLabels = { healthy: ['🌱 Healthy','h'], withered: ['🍂 Withered','w'], recovering: ['✨ Recovering','r'] };
+
+  function setStage(stage) {
+    stage = Math.max(1, Math.min(7, parseInt(stage) || 4));
+    treeHero.setAttribute('data-stage', stage);
+    allSvgs.forEach(svg => { svg.classList.toggle('tree-hidden', parseInt(svg.getAttribute('data-stage')) !== stage); });
+    stageNameEl.textContent = stageNames[stage - 1];
+    stageNumEl.textContent = stage + ' / 7';
+    const pct = Math.round((stage / 7) * 100);
+    progressFill.style.width = pct + '%';
+    progressPct.textContent = pct + '%';
+    document.querySelectorAll('.stage-select-btn').forEach(btn => { btn.classList.toggle('active', parseInt(btn.getAttribute('data-stage')) === stage); });
+    document.querySelectorAll('#stage-path .stage-dot').forEach(dot => { const ds = parseInt(dot.getAttribute('data-stage')); dot.classList.remove('current','earned'); if (ds < stage) dot.classList.add('earned'); if (ds === stage) dot.classList.add('current'); });
+    document.querySelectorAll('#stage-path .stage-connector').forEach(conn => { const prevDot = conn.parentElement?.querySelector('.stage-dot'); if (prevDot) conn.classList.toggle('earned', parseInt(prevDot.getAttribute('data-stage')) < stage); });
+  }
+
+  function setHealth(health) {
+    treeHero.setAttribute('data-health', health);
+    const [label, cls] = healthLabels[health];
+    healthBadge.textContent = label;
+    healthBadge.className = 'tree-health-badge ' + cls;
+    document.querySelectorAll('.health-toggle').forEach(btn => { btn.classList.toggle('active', btn.getAttribute('data-health') === health); });
+  }
+
+  document.getElementById('stage-selector').addEventListener('click', e => { const btn = e.target.closest('.stage-select-btn'); if (btn) setStage(parseInt(btn.getAttribute('data-stage'))); });
+  document.getElementById('health-toggles').addEventListener('click', e => { const btn = e.target.closest('.health-toggle'); if (btn) setHealth(btn.getAttribute('data-health')); });
+  document.getElementById('stage-path').addEventListener('click', e => { const dot = e.target.closest('.stage-dot'); if (dot) setStage(parseInt(dot.getAttribute('data-stage'))); });
+
+  setStage(4);
+  setHealth('healthy');
+})();
+</script>
+</body>
+</html>

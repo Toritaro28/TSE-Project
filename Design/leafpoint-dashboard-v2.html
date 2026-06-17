@@ -1,0 +1,1274 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LeafPoint — World Tree Dashboard</title>
+  <style>
+    /* ============================================================
+       Design Tokens — Game-meets-HR palette
+       ============================================================ */
+    :root {
+      --bg-deep: oklch(96% 0.006 235);
+      --bg-gradient: radial-gradient(ellipse at 50% 0%, oklch(92% 0.03 170 / 0.35), oklch(97% 0.004 245) 55%);
+      --surface-glass: rgba(255, 255, 255, 0.52);
+      --surface-glass-hover: rgba(255, 255, 255, 0.72);
+      --surface-solid: #ffffff;
+      --fg: oklch(16% 0.016 252);
+      --fg-secondary: oklch(38% 0.02 250);
+      --muted: oklch(55% 0.014 250);
+      --border-glass: rgba(255, 255, 255, 0.38);
+      --border-subtle: rgba(0, 0, 0, 0.055);
+
+      --accent: oklch(56% 0.18 148);
+      --accent-soft: oklch(72% 0.13 148);
+      --accent-glow: oklch(62% 0.2 148 / 0.4);
+      --gold: oklch(70% 0.18 82);
+      --gold-soft: oklch(82% 0.12 82);
+      --gold-glow: oklch(74% 0.2 82 / 0.35);
+
+      --green-status: oklch(60% 0.18 145);
+      --red-status: oklch(53% 0.22 22);
+      --yellow-withered: oklch(68% 0.14 85);
+      --blue-leave: oklch(56% 0.16 255);
+      --purple-holiday: oklch(53% 0.18 310);
+      --gray-unpaid: oklch(68% 0.005 250);
+
+      --sidebar-bg: oklch(13% 0.02 252);
+      --sidebar-fg: oklch(84% 0.006 250);
+      --sidebar-muted: oklch(60% 0.016 250);
+
+      --radius-sm: 10px;
+      --radius-md: 16px;
+      --radius-lg: 22px;
+      --radius-xl: 28px;
+      --shadow-card: 0 2px 20px rgba(0,0,0,0.045), 0 0 0 1px rgba(0,0,0,0.035);
+      --shadow-card-hover: 0 8px 38px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.05);
+      --shadow-glow: 0 0 60px var(--accent-glow);
+
+      --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+      --font-mono: 'SF Mono', ui-monospace, 'JetBrains Mono', Menlo, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; height: 100%;
+      font-family: var(--font-body);
+      color: var(--fg);
+      background: var(--bg-deep);
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+
+    /* ---- App Shell ---- */
+    .app { display: flex; height: 100vh; width: 100%; }
+
+    /* ---- Sidebar ---- */
+    .sidebar {
+      width: 250px; min-width: 250px; height: 100%;
+      background: var(--sidebar-bg); color: var(--sidebar-fg);
+      display: flex; flex-direction: column; padding: 26px 18px 18px;
+      gap: 5px; z-index: 10;
+      border-right: 1px solid rgba(255,255,255,0.06);
+    }
+    .sidebar-brand {
+      display: flex; align-items: center; gap: 11px;
+      padding: 0 8px 24px;
+      font-family: var(--font-display); font-size: 19px; font-weight: 700;
+      letter-spacing: -0.02em; color: #fff;
+    }
+    .sidebar-brand .logo-icon {
+      width: 38px; height: 38px; border-radius: 11px;
+      background: linear-gradient(135deg, var(--accent), oklch(46% 0.15 158));
+      display: grid; place-items: center; font-size: 20px;
+    }
+    .sidebar-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+    .sidebar-nav .nav-section {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.09em;
+      color: var(--sidebar-muted); padding: 14px 10px 5px; font-weight: 600;
+    }
+    .sidebar-nav button {
+      display: flex; align-items: center; gap: 9px; width: 100%;
+      padding: 10px 10px; border: none; border-radius: 9px;
+      background: transparent; color: var(--sidebar-fg);
+      font: 13px/1.4 var(--font-body); cursor: pointer;
+      transition: background 0.15s; text-align: left; letter-spacing: -0.01em;
+    }
+    .sidebar-nav button:hover { background: rgba(255,255,255,0.055); }
+    .sidebar-nav button.active { background: rgba(255,255,255,0.1); color: #fff; font-weight: 600; }
+    .sidebar-nav button .nav-icon { font-size: 16px; width: 22px; text-align: center; flex-shrink: 0; }
+    .sidebar-user {
+      display: flex; align-items: center; gap: 10px; padding: 12px 8px;
+      border-top: 1px solid rgba(255,255,255,0.07); margin-top: auto;
+    }
+    .sidebar-user .avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), oklch(48% 0.13 165));
+      display: grid; place-items: center; font-size: 14px; font-weight: 700;
+      color: #fff; flex-shrink: 0;
+    }
+    .sidebar-user .user-name { font-size: 13px; font-weight: 600; color: #fff; }
+    .sidebar-user .user-role { font-size: 10px; color: var(--sidebar-muted); }
+
+    /* ---- Main ---- */
+    .main {
+      flex: 1; overflow-y: auto; overflow-x: hidden;
+      background: var(--bg-gradient); display: flex; flex-direction: column;
+    }
+    .main-inner {
+      padding: 24px 30px 36px; display: flex; flex-direction: column;
+      gap: 20px; max-width: 1440px; width: 100%;
+    }
+
+    /* ---- Header ---- */
+    .dashboard-header {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 14px;
+    }
+    .greeting h1 {
+      font-family: var(--font-display); font-size: 24px; font-weight: 700;
+      letter-spacing: -0.02em; color: var(--fg);
+    }
+    .greeting span { font-size: 13px; color: var(--muted); display: block; margin-top: 2px; }
+    .header-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 7px 13px; border-radius: 999px;
+      font-size: 12px; font-weight: 600; letter-spacing: -0.01em;
+    }
+    .pill-streak { background: oklch(94% 0.05 83); color: oklch(42% 0.13 78); }
+    .pill-points { background: oklch(93% 0.05 158); color: oklch(40% 0.13 152); }
+
+    /* ============================================================
+       WORLD TREE HERO
+       ============================================================ */
+    .tree-hero {
+      position: relative;
+      background: var(--surface-glass);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-card), var(--shadow-glow);
+      padding: 28px 32px 24px;
+      display: flex;
+      gap: 32px;
+      align-items: center;
+      overflow: hidden;
+    }
+    .tree-hero::before {
+      content: '';
+      position: absolute;
+      top: -60px; right: -40px;
+      width: 280px; height: 280px;
+      background: radial-gradient(circle, oklch(62% 0.18 148 / 0.12), transparent 70%);
+      pointer-events: none;
+    }
+    .tree-hero::after {
+      content: '';
+      position: absolute;
+      bottom: -30px; left: 20%;
+      width: 200px; height: 120px;
+      background: radial-gradient(ellipse, oklch(74% 0.18 82 / 0.08), transparent 70%);
+      pointer-events: none;
+    }
+    .tree-visual {
+      flex-shrink: 0;
+      width: 220px;
+      height: 280px;
+      display: grid;
+      place-items: center;
+      position: relative;
+      z-index: 1;
+    }
+    .tree-visual svg { width: 100%; height: 100%; }
+    .tree-visual.withered svg .canopy-leaf { fill: oklch(72% 0.1 88) !important; }
+    .tree-visual.withered svg .canopy-fill { fill: oklch(74% 0.08 85) !important; }
+    .tree-visual.withered svg .blossom { opacity: 0.2; }
+    .tree-visual.withered svg .trunk { fill: oklch(55% 0.04 70) !important; }
+
+    @keyframes treeBreathe {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.015); }
+    }
+    .tree-visual.healthy svg { animation: treeBreathe 4s ease-in-out infinite; }
+
+    @keyframes recoveryPulse {
+      0%, 100% { filter: drop-shadow(0 0 8px oklch(62% 0.2 148 / 0.3)); }
+      50% { filter: drop-shadow(0 0 24px oklch(62% 0.2 148 / 0.7)); }
+    }
+    .tree-visual.recovering svg { animation: recoveryPulse 1.2s ease-in-out infinite; }
+
+    .tree-info-panel {
+      flex: 1;
+      display: flex; flex-direction: column; gap: 14px;
+      z-index: 1;
+      min-width: 0;
+    }
+    .tree-title-row {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .tree-title-row h2 {
+      font-family: var(--font-display); font-size: 26px; font-weight: 800;
+      letter-spacing: -0.02em; color: var(--fg);
+    }
+    .tree-health-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 12px; border-radius: 999px;
+      font-size: 12px; font-weight: 700; letter-spacing: 0.01em;
+    }
+    .tree-health-badge.healthy {
+      background: oklch(92% 0.06 148); color: oklch(38% 0.1 148);
+    }
+    .tree-health-badge.withered {
+      background: oklch(92% 0.06 82); color: oklch(42% 0.12 80);
+    }
+    .tree-health-badge.recovering {
+      background: oklch(93% 0.05 170); color: oklch(40% 0.1 170);
+      animation: recoveryPulse 1.2s ease-in-out infinite;
+    }
+    .tree-stage-desc {
+      font-size: 14px; color: var(--fg-secondary); line-height: 1.5;
+      max-width: 460px;
+    }
+    .tree-meta-row {
+      display: flex; gap: 20px; flex-wrap: wrap;
+    }
+    .tree-meta-item {
+      display: flex; flex-direction: column; gap: 3px;
+    }
+    .tree-meta-item .meta-label {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--muted); font-weight: 700;
+    }
+    .tree-meta-item .meta-value {
+      font-family: var(--font-display); font-size: 20px; font-weight: 700;
+      letter-spacing: -0.01em; color: var(--fg);
+    }
+    .tree-meta-item .meta-value.accent { color: var(--accent); }
+    .tree-meta-item .meta-value.gold { color: var(--gold); }
+
+    /* Recovery progress */
+    .recovery-bar-wrap {
+      display: flex; flex-direction: column; gap: 5px;
+    }
+    .recovery-bar-wrap .recovery-label {
+      font-size: 11px; font-weight: 600; color: var(--muted);
+      display: flex; justify-content: space-between;
+    }
+    .recovery-bar {
+      width: 100%; height: 8px; border-radius: 999px;
+      background: oklch(90% 0.008 240); overflow: hidden;
+    }
+    .recovery-fill {
+      height: 100%; border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), oklch(64% 0.18 150));
+      transition: width 0.6s ease;
+    }
+
+    /* ---- Stage Progression Path ---- */
+    .stage-path {
+      display: flex; align-items: center; gap: 6px;
+      flex-wrap: wrap; padding-top: 4px;
+    }
+    .stage-step {
+      display: flex; align-items: center; gap: 6px;
+    }
+    .stage-dot {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: grid; place-items: center;
+      font-size: 17px; font-weight: 700;
+      background: oklch(90% 0.006 250);
+      color: var(--muted);
+      border: 2px solid transparent;
+      transition: all 0.3s;
+      cursor: pointer;
+      font-family: var(--font-display);
+      position: relative;
+    }
+    .stage-dot.earned { background: oklch(88% 0.05 148); color: oklch(38% 0.1 148); border-color: oklch(78% 0.1 148); }
+    .stage-dot.current {
+      background: var(--accent); color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 18px var(--accent-glow);
+      animation: stagePulse 2.2s ease-in-out infinite;
+    }
+    @keyframes stagePulse {
+      0%, 100% { box-shadow: 0 0 12px var(--accent-glow); }
+      50% { box-shadow: 0 0 28px oklch(62% 0.22 148 / 0.55); }
+    }
+    .stage-dot.downgraded {
+      background: oklch(86% 0.04 85); color: oklch(40% 0.08 80);
+      border-color: oklch(78% 0.08 85);
+      text-decoration: line-through; text-decoration-color: oklch(60% 0.1 40 / 0.5);
+    }
+    .stage-connector {
+      width: 18px; height: 2px; background: oklch(88% 0.006 250); border-radius: 1px;
+    }
+    .stage-connector.earned { background: oklch(78% 0.1 148); }
+    .stage-step:last-child .stage-connector { display: none; }
+
+    /* ---- Tree state label ---- */
+    .tree-state-msg {
+      font-size: 12px; font-weight: 600;
+      padding: 6px 14px; border-radius: 8px;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .tree-state-msg.warning {
+      background: oklch(94% 0.05 82); color: oklch(42% 0.12 80);
+    }
+    .tree-state-msg.ok {
+      background: oklch(94% 0.04 148); color: oklch(38% 0.1 148);
+    }
+
+    /* ============================================================
+       CARD GRID
+       ============================================================ */
+    .card-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
+    .card-grid.col-span-2 { grid-column: span 2; }
+    .card-grid.col-span-3 { grid-column: span 3; }
+
+    .glass-card {
+      background: var(--surface-glass);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      padding: 20px 22px;
+      transition: box-shadow 0.2s, background 0.2s;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .glass-card:hover { background: var(--surface-glass-hover); box-shadow: var(--shadow-card-hover); }
+    .glass-card .card-header {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    }
+    .glass-card .card-title {
+      font-family: var(--font-display); font-size: 15px; font-weight: 700;
+      letter-spacing: -0.01em; color: var(--fg);
+    }
+    .glass-card .card-subtitle { font-size: 11px; color: var(--muted); }
+
+    /* ---- Check In / Out ---- */
+    .check-actions { display: flex; gap: 12px; }
+    .btn-check {
+      flex: 1; min-width: 120px; padding: 16px 20px;
+      border: none; border-radius: var(--radius-md);
+      font-family: var(--font-display); font-size: 16px; font-weight: 700;
+      letter-spacing: -0.01em; cursor: pointer;
+      transition: all 0.2s;
+      display: flex; flex-direction: column; align-items: center; gap: 5px;
+    }
+    .btn-check-in {
+      background: var(--accent); color: #fff;
+      box-shadow: 0 6px 22px oklch(56% 0.18 148 / 0.3);
+    }
+    .btn-check-in:hover:not(:disabled) {
+      background: oklch(50% 0.16 148); transform: translateY(-2px);
+      box-shadow: 0 8px 30px oklch(56% 0.18 148 / 0.42);
+    }
+    .btn-check-in:disabled {
+      background: oklch(87% 0.02 155); color: oklch(58% 0.04 155);
+      cursor: default; box-shadow: none;
+    }
+    .btn-check-out {
+      background: var(--surface-solid); color: var(--fg);
+      border: 1.5px solid var(--border-subtle);
+    }
+    .btn-check-out:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); transform: translateY(-2px); }
+    .btn-check-out:disabled { opacity: 0.4; cursor: default; }
+    .btn-check .btn-icon { font-size: 26px; line-height: 1; }
+    .btn-check .btn-sub { font-size: 11px; font-weight: 500; opacity: 0.7; }
+    .check-status-row {
+      display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px;
+    }
+    .check-status-row .cs-item { display: flex; flex-direction: column; gap: 2px; }
+    .check-status-row .cs-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 700; }
+    .check-status-row .cs-value { font-family: var(--font-mono); font-size: 14px; font-weight: 600; }
+
+    @keyframes checkInPulse {
+      0% { box-shadow: 0 0 0 0 oklch(56% 0.18 148 / 0.45); }
+      70% { box-shadow: 0 0 0 14px oklch(56% 0.18 148 / 0); }
+      100% { box-shadow: 0 0 0 0 oklch(56% 0.18 148 / 0); }
+    }
+    .btn-check-in:not(:disabled) { animation: checkInPulse 2.2s ease-in-out infinite; }
+
+    /* ---- Points ---- */
+    .points-big {
+      font-family: var(--font-display); font-size: 44px; font-weight: 800;
+      letter-spacing: -0.03em; color: var(--fg); line-height: 1;
+    }
+    .points-breakdown {
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+      font-size: 13px;
+      background: rgba(0,0,0,0.025); padding: 8px 12px; border-radius: var(--radius-sm);
+    }
+    .points-breakdown .base { font-weight: 600; }
+    .points-breakdown .plus { color: var(--muted); }
+    .points-breakdown .bonus { font-weight: 700; color: var(--gold); }
+
+    /* ---- Streak ---- */
+    .streak-big {
+      font-family: var(--font-display); font-size: 52px; font-weight: 800;
+      letter-spacing: -0.04em; color: var(--gold); line-height: 1;
+    }
+    .streak-meta { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; }
+    .streak-meta .sm-item { display: flex; flex-direction: column; gap: 1px; }
+    .streak-meta .sm-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 700; }
+    .streak-meta .sm-value { font-size: 15px; font-weight: 700; }
+
+    /* ---- Achievements ---- */
+    .achievement-grid { display: flex; gap: 12px; flex-wrap: wrap; }
+    .ach-card {
+      flex: 1; min-width: 150px;
+      padding: 16px; border-radius: var(--radius-md);
+      background: rgba(0,0,0,0.02);
+      display: flex; flex-direction: column; gap: 8px;
+      transition: transform 0.2s, box-shadow 0.2s;
+      border: 1px solid transparent;
+    }
+    .ach-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.05); }
+    .ach-card.earned { border-color: oklch(82% 0.1 82 / 0.5); background: oklch(96% 0.03 82 / 0.3); }
+    .ach-card.locked { opacity: 0.55; }
+    .ach-icon { font-size: 32px; }
+    .ach-name { font-size: 13px; font-weight: 700; color: var(--fg); }
+    .ach-desc { font-size: 11px; color: var(--muted); }
+    .ach-status {
+      font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .ach-status.earned-text { color: var(--gold); }
+    .ach-status.locked-text { color: var(--muted); }
+
+    /* Badge collection */
+    .badge-wall { display: flex; gap: 8px; flex-wrap: wrap; }
+    .badge-icon {
+      width: 40px; height: 40px; border-radius: 50%;
+      display: grid; place-items: center; font-size: 20px;
+      background: oklch(90% 0.006 250);
+      transition: transform 0.15s;
+      cursor: default;
+    }
+    .badge-icon.owned { background: oklch(90% 0.06 82); }
+    .badge-icon:hover { transform: scale(1.15); }
+
+    /* ---- QR Check-In ---- */
+    .qr-section { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+    .qr-code {
+      width: 110px; height: 110px;
+      background: #fff; border-radius: var(--radius-sm);
+      display: grid; place-items: center;
+      border: 2px solid var(--border-subtle);
+      flex-shrink: 0;
+    }
+    .qr-code svg { width: 90px; height: 90px; }
+    .qr-info { flex: 1; min-width: 140px; display: flex; flex-direction: column; gap: 8px; }
+    .qr-info .qr-title { font-size: 14px; font-weight: 700; }
+    .qr-verification { display: flex; flex-direction: column; gap: 4px; }
+    .qr-verification .v-row {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 11px; color: var(--fg-secondary);
+    }
+    .v-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .v-dot.verified { background: var(--green-status); }
+    .v-dot.pending { background: var(--gold); animation: pulse-dot 1.6s ease-in-out infinite; }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.35; }
+    }
+
+    /* ---- Analytics ---- */
+    .analytics-row { display: flex; gap: 14px; flex-wrap: wrap; }
+    .analytics-item {
+      flex: 1; min-width: 100px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .analytics-item .a-label {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em;
+      color: var(--muted); font-weight: 700;
+    }
+    .analytics-item .a-value {
+      font-family: var(--font-display); font-size: 28px; font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .analytics-bar-wrap { width: 100%; height: 6px; border-radius: 999px; background: oklch(90% 0.006 250); overflow: hidden; }
+    .analytics-bar-fill { height: 100%; border-radius: 999px; transition: width 0.6s ease; }
+    .analytics-bar-fill.green { background: var(--green-status); }
+    .analytics-bar-fill.gold { background: var(--gold); }
+    .analytics-bar-fill.red { background: var(--red-status); }
+
+    /* ---- Leave ---- */
+    .leave-mini { display: flex; gap: 10px; flex-wrap: wrap; }
+    .leave-chip {
+      flex: 1; min-width: 80px;
+      background: rgba(0,0,0,0.022); border-radius: var(--radius-sm);
+      padding: 12px 14px; display: flex; flex-direction: column; gap: 3px;
+    }
+    .leave-chip .lc-type { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+    .leave-chip .lc-days { font-family: var(--font-display); font-size: 24px; font-weight: 700; }
+    .leave-chip.annual .lc-days { color: var(--blue-leave); }
+    .leave-chip.medical .lc-days { color: var(--yellow-withered); }
+
+    /* ---- Calendar ---- */
+    .cal-mini { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
+    .cal-mini .cal-day-header {
+      font-size: 9px; text-transform: uppercase; letter-spacing: 0.07em;
+      color: var(--muted); font-weight: 700; padding: 3px 0;
+    }
+    .cal-mini .cal-day {
+      aspect-ratio: 1; display: grid; place-items: center;
+      font-size: 11px; font-weight: 500; border-radius: 5px;
+      cursor: default; font-family: var(--font-mono);
+    }
+    .cal-mini .cal-day.other-month { color: oklch(80% 0.004 250); }
+    .cal-mini .cal-day.today { font-weight: 800; box-shadow: inset 0 0 0 2px var(--accent); }
+    .cal-mini .cal-day.present { background: oklch(88% 0.06 145); color: oklch(36% 0.08 145); }
+    .cal-mini .cal-day.absent { background: oklch(88% 0.04 22); color: oklch(38% 0.1 22); }
+    .cal-mini .cal-day.annual-leave { background: oklch(86% 0.05 255); color: oklch(36% 0.08 255); }
+    .cal-mini .cal-day.medical-leave { background: oklch(91% 0.06 88); color: oklch(42% 0.1 88); }
+    .cal-mini .cal-day.public-holiday { background: oklch(89% 0.05 310); color: oklch(36% 0.1 310); }
+    .cal-mini .cal-day.unpaid { background: oklch(88% 0.003 250); color: oklch(48% 0.005 250); }
+    .cal-legend { display: flex; gap: 10px; flex-wrap: wrap; font-size: 9px; color: var(--muted); }
+    .cal-legend span { display: inline-flex; align-items: center; gap: 3px; }
+    .cal-legend .dot { width: 7px; height: 7px; border-radius: 2px; display: inline-block; }
+    .cal-month-nav { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; }
+    .cal-month-nav button {
+      width: 26px; height: 26px; border: none; border-radius: 50%;
+      background: rgba(0,0,0,0.04); cursor: pointer; font-size: 13px;
+      display: grid; place-items: center; transition: background 0.15s;
+    }
+    .cal-month-nav button:hover { background: rgba(0,0,0,0.1); }
+
+    /* ---- Rewards ---- */
+    .reward-row { display: flex; flex-direction: column; gap: 8px; }
+    .reward-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: var(--radius-sm);
+      background: rgba(0,0,0,0.018); transition: background 0.15s;
+    }
+    .reward-item:hover { background: rgba(0,0,0,0.045); }
+    .reward-icon {
+      width: 36px; height: 36px; border-radius: 9px;
+      display: grid; place-items: center; font-size: 18px; flex-shrink: 0;
+    }
+    .reward-info { flex: 1; min-width: 0; }
+    .reward-name { font-size: 12px; font-weight: 600; color: var(--fg); }
+    .reward-cost { font-size: 10px; color: var(--muted); }
+    .btn-redeem {
+      padding: 5px 12px; border: none; border-radius: 999px;
+      background: var(--accent); color: #fff; font-size: 11px; font-weight: 600;
+      cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .btn-redeem:hover { background: oklch(50% 0.16 148); transform: scale(1.04); }
+    .btn-redeem:disabled { background: oklch(87% 0.02 155); color: oklch(58% 0.04 155); cursor: default; transform: none; }
+
+    /* ---- Pending badge ---- */
+    .pending-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--gold); display: inline-block;
+      animation: pulse-dot 1.6s ease-in-out infinite;
+    }
+
+    /* ---- Responsive ---- */
+    @media (max-width: 1300px) {
+      .card-grid { grid-template-columns: 1fr 1fr; }
+      .card-grid.col-span-2 { grid-column: span 2; }
+      .card-grid.col-span-3 { grid-column: span 2; }
+      .tree-hero { flex-direction: column; align-items: center; text-align: center; }
+      .tree-info-panel { align-items: center; }
+      .tree-stage-desc { max-width: 100%; }
+      .stage-path { justify-content: center; }
+    }
+    @media (max-width: 900px) {
+      .sidebar { width: 210px; min-width: 210px; }
+      .card-grid { grid-template-columns: 1fr; }
+      .card-grid.col-span-2, .card-grid.col-span-3 { grid-column: span 1; }
+      .main-inner { padding: 16px 12px; }
+    }
+    @media (max-width: 660px) {
+      .sidebar { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- ==========================================================
+         SIDEBAR
+         ========================================================== -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="logo-icon">🌿</div>
+        LeafPoint
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">Main</div>
+        <button class="active"><span class="nav-icon">◈</span> Dashboard</button>
+        <button><span class="nav-icon">🌳</span> My Tree</button>
+        <button><span class="nav-icon">📅</span> Calendar</button>
+        <div class="nav-section">Manage</div>
+        <button><span class="nav-icon">📋</span> Leave Requests</button>
+        <button><span class="nav-icon">🎁</span> Rewards Store</button>
+        <button><span class="nav-icon">🏆</span> Achievements</button>
+        <button><span class="nav-icon">👥</span> Team</button>
+      </nav>
+      <div class="sidebar-user">
+        <div class="avatar">AC</div>
+        <div style="display:flex;flex-direction:column;gap:1px;">
+          <div class="user-name">Alex Chen</div>
+          <div class="user-role">Product Designer</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ==========================================================
+         MAIN CONTENT
+         ========================================================== -->
+    <main class="main">
+      <div class="main-inner">
+
+        <!-- Header -->
+        <header class="dashboard-header">
+          <div class="greeting">
+            <h1>Good morning, Alex 👋</h1>
+            <span id="header-date">Wednesday, April 16, 2025</span>
+          </div>
+          <div class="header-pills">
+            <span class="pill pill-streak">🔥 12-Day Streak</span>
+            <span class="pill pill-points">⭐ 1,250 Points</span>
+          </div>
+        </header>
+
+        <!-- ======================================================
+             WORLD TREE HERO — Primary Feature
+             ====================================================== -->
+        <section class="tree-hero" id="tree-hero">
+          <div class="tree-visual healthy" id="tree-visual">
+            <!-- Blooming Tree SVG — Stage 4, Healthy -->
+            <svg viewBox="0 0 220 280" xmlns="http://www.w3.org/2000/svg">
+              <!-- Ground -->
+              <ellipse cx="110" cy="255" rx="70" ry="12" fill="#8D6E63" opacity="0.5" />
+              <!-- Pot -->
+              <ellipse cx="110" cy="248" rx="42" ry="9" fill="#6D4C41" />
+              <path d="M78 238 Q78 256 90 256 L130 256 Q142 256 142 238 Z" fill="#8D6E63" />
+              <ellipse cx="110" cy="238" rx="32" ry="6" fill="#795548" />
+              <!-- Trunk -->
+              <path class="trunk" d="M103 238 Q100 205 95 170 Q90 140 86 110 Q83 90 85 72"
+                    stroke="#5D4037" stroke-width="14" fill="none" stroke-linecap="round" />
+              <path class="trunk" d="M117 238 Q115 210 112 178 Q108 145 105 115 Q103 95 102 78"
+                    stroke="#6D4C41" stroke-width="11" fill="none" stroke-linecap="round" />
+              <!-- Branches -->
+              <path d="M94 140 Q72 122 50 108" stroke="#5D4037" stroke-width="7" fill="none" stroke-linecap="round" />
+              <path d="M108 125 Q128 108 148 95" stroke="#6D4C41" stroke-width="6" fill="none" stroke-linecap="round" />
+              <path d="M96 100 Q74 82 62 64" stroke="#5D4037" stroke-width="5" fill="none" stroke-linecap="round" />
+              <path d="M104 88 Q120 68 130 52" stroke="#6D4C41" stroke-width="4.5" fill="none" stroke-linecap="round" />
+              <path d="M88 75 Q66 62 52 42" stroke="#5D4037" stroke-width="3.5" fill="none" stroke-linecap="round" />
+              <!-- Canopy — layered green foliage -->
+              <circle class="canopy-fill" cx="85" cy="62" r="28" fill="oklch(60% 0.16 140 / 0.85)" />
+              <circle class="canopy-fill" cx="108" cy="48" r="32" fill="oklch(56% 0.15 142 / 0.9)" />
+              <circle class="canopy-fill" cx="130" cy="62" r="26" fill="oklch(62% 0.17 138 / 0.82)" />
+              <circle class="canopy-fill" cx="60" cy="52" r="22" fill="oklch(58% 0.14 143 / 0.85)" />
+              <circle class="canopy-fill" cx="148" cy="56" r="20" fill="oklch(60% 0.15 141 / 0.8)" />
+              <circle class="canopy-fill" cx="95" cy="36" r="24" fill="oklch(54% 0.14 144 / 0.9)" />
+              <circle class="canopy-fill" cx="118" cy="32" r="22" fill="oklch(58% 0.16 140 / 0.85)" />
+              <circle class="canopy-fill" cx="78" cy="28" r="18" fill="oklch(56% 0.15 142 / 0.88)" />
+              <circle class="canopy-fill" cx="140" cy="44" r="16" fill="oklch(62% 0.16 139 / 0.78)" />
+              <!-- Blossoms -->
+              <circle class="blossom" cx="80" cy="55" r="5" fill="oklch(78% 0.12 8 / 0.85)" />
+              <circle class="blossom" cx="108" cy="40" r="6" fill="oklch(80% 0.10 4 / 0.8)" />
+              <circle class="blossom" cx="132" cy="55" r="4.5" fill="oklch(76% 0.11 10 / 0.82)" />
+              <circle class="blossom" cx="62" cy="45" r="4" fill="oklch(79% 0.09 6 / 0.75)" />
+              <circle class="blossom" cx="145" cy="48" r="3.5" fill="oklch(77% 0.10 10 / 0.78)" />
+              <circle class="blossom" cx="95" cy="28" r="4" fill="oklch(80% 0.11 5 / 0.8)" />
+              <circle class="blossom" cx="120" cy="24" r="3.5" fill="oklch(78% 0.10 8 / 0.75)" />
+              <circle class="blossom" cx="72" cy="22" r="3" fill="oklch(79% 0.09 7 / 0.7)" />
+              <!-- Sparkle dots -->
+              <circle cx="155" cy="38" r="2" fill="oklch(85% 0.08 100 / 0.5)" />
+              <circle cx="50" cy="60" r="1.5" fill="oklch(85% 0.08 100 / 0.4)" />
+            </svg>
+          </div>
+
+          <div class="tree-info-panel">
+            <div class="tree-title-row">
+              <h2>Blooming Tree</h2>
+              <span class="tree-health-badge healthy" id="tree-health-badge">🌱 Healthy</span>
+            </div>
+            <p class="tree-stage-desc">
+              Your tree is blooming with vitality! Consistent attendance and a <strong>12-day streak</strong> keep it thriving. Reach Stage 5 at 80% progress.
+            </p>
+            <div class="tree-meta-row">
+              <div class="tree-meta-item">
+                <span class="meta-label">Current Stage</span>
+                <span class="meta-value accent">4 / 7</span>
+              </div>
+              <div class="tree-meta-item">
+                <span class="meta-label">Highest Achieved</span>
+                <span class="meta-value gold">Stage 5</span>
+              </div>
+              <div class="tree-meta-item">
+                <span class="meta-label">Progress to Stage 5</span>
+                <span class="meta-value accent">65%</span>
+              </div>
+            </div>
+            <!-- Stage Progression Path -->
+            <div class="stage-path" id="stage-path">
+              <div class="stage-step">
+                <div class="stage-dot earned" data-stage="1" title="Sprout — Earned">🌱</div>
+                <div class="stage-connector earned"></div>
+              </div>
+              <div class="stage-step">
+                <div class="stage-dot earned" data-stage="2" title="Small Tree — Earned">🪴</div>
+                <div class="stage-connector earned"></div>
+              </div>
+              <div class="stage-step">
+                <div class="stage-dot earned" data-stage="3" title="Big Tree — Earned">🌲</div>
+                <div class="stage-connector earned"></div>
+              </div>
+              <div class="stage-step">
+                <div class="stage-dot current" data-stage="4" title="Blooming Tree — Current">🌸</div>
+                <div class="stage-connector"></div>
+              </div>
+              <div class="stage-step">
+                <div class="stage-dot" data-stage="5" title="Bigger Tree — Locked">🌳</div>
+                <div class="stage-connector"></div>
+              </div>
+              <div class="stage-step">
+                <div class="stage-dot" data-stage="6" title="Blooming Bigger Tree — Locked">💐</div>
+                <div class="stage-connector"></div>
+              </div>
+              <div class="stage-step">
+                <div class="stage-dot" data-stage="7" title="World Tree — Locked">🌍</div>
+              </div>
+            </div>
+            <!-- Recovery indicator (hidden by default) -->
+            <div class="recovery-bar-wrap" id="recovery-section" style="display:none;">
+              <div class="recovery-label">
+                <span>🔄 Recovery Progress</span>
+                <span id="recovery-pct">0%</span>
+              </div>
+              <div class="recovery-bar">
+                <div class="recovery-fill" id="recovery-fill" style="width:0%;"></div>
+              </div>
+              <span style="font-size:10px;color:var(--muted);">Attend 3 consecutive days on time to restore tree health</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ======================================================
+             ROW 1: Attendance + Points + Streak
+             ====================================================== -->
+        <div class="card-grid">
+          <!-- Check In / Out -->
+          <div class="glass-card col-span-2" id="attendance-card">
+            <div class="card-header">
+              <div class="card-title">Today's Attendance</div>
+              <span style="font-size:12px;font-weight:600;color:var(--green-status);" id="attendance-badge">✅ Checked In</span>
+            </div>
+            <div class="check-actions">
+              <button class="btn-check btn-check-in" id="btn-check-in" disabled>
+                <span class="btn-icon">✓</span> Check In
+                <span class="btn-sub" id="check-in-time-label">08:32 AM</span>
+              </button>
+              <button class="btn-check btn-check-out" id="btn-check-out">
+                <span class="btn-icon">↩</span> Check Out
+                <span class="btn-sub" id="check-out-time-label">—:— —</span>
+              </button>
+            </div>
+            <div class="check-status-row">
+              <div class="cs-item"><span class="cs-label">Check-in</span><span class="cs-value" id="status-in">08:32 AM</span></div>
+              <div class="cs-item"><span class="cs-label">Check-out</span><span class="cs-value" id="status-out">—:— —</span></div>
+              <div class="cs-item"><span class="cs-label">Status</span><span class="cs-value" style="color:var(--green-status);" id="status-label">On Time</span></div>
+              <div class="cs-item"><span class="cs-label">Rate</span><span class="cs-value" style="color:var(--accent);">90%</span></div>
+            </div>
+          </div>
+
+          <!-- Points -->
+          <div class="glass-card" id="points-card">
+            <div class="card-header"><div class="card-title">Points Earned</div></div>
+            <div style="display:flex;align-items:baseline;gap:6px;">
+              <span class="points-big">1,250</span>
+              <span style="font-size:13px;color:var(--muted);">total</span>
+            </div>
+            <div class="points-breakdown">
+              <span style="font-size:11px;color:var(--muted);">Today:</span>
+              <span class="base">10 Base</span>
+              <span class="plus">+</span>
+              <span class="bonus">5 Streak Bonus</span>
+              <span style="font-weight:700;color:var(--accent);margin-left:auto;">= 15 pts</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ======================================================
+             ROW 2: Achievements
+             ====================================================== -->
+        <div class="card-grid">
+          <div class="glass-card col-span-3" id="achievements-card">
+            <div class="card-header">
+              <div class="card-title">🏆 Achievements & Badges</div>
+            </div>
+            <div class="achievement-grid">
+              <div class="ach-card earned">
+                <span class="ach-icon">🔥</span>
+                <span class="ach-name">5-Day Streak Bonus</span>
+                <span class="ach-desc">+5 bonus points daily after 5 consecutive on-time days</span>
+                <span class="ach-status earned-text">✅ Earned — Active</span>
+              </div>
+              <div class="ach-card locked">
+                <span class="ach-icon">🛡️</span>
+                <span class="ach-name">30-Day Iron Man</span>
+                <span class="ach-desc">30 consecutive on-time days unlocks the Iron Man badge + 200 bonus pts</span>
+                <span class="ach-status locked-text">🔒 12 / 30 days</span>
+              </div>
+              <div class="ach-card earned">
+                <span class="ach-icon">🌱</span>
+                <span class="ach-name">First Sprout</span>
+                <span class="ach-desc">Reach Stage 1 of the World Tree</span>
+                <span class="ach-status earned-text">✅ Earned</span>
+              </div>
+              <div class="ach-card earned">
+                <span class="ach-icon">🌸</span>
+                <span class="ach-name">Bloom Seeker</span>
+                <span class="ach-desc">Reach the Blooming Tree stage (Stage 4)</span>
+                <span class="ach-status earned-text">✅ Earned</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-top:4px;">
+              <span style="font-size:12px;font-weight:600;color:var(--fg-secondary);">Badge Collection:</span>
+              <div class="badge-wall">
+                <span class="badge-icon owned" title="First Check-in">✓</span>
+                <span class="badge-icon owned" title="5-Day Streak">🔥</span>
+                <span class="badge-icon owned" title="Early Bird">🐦</span>
+                <span class="badge-icon owned" title="Bloom Seeker">🌸</span>
+                <span class="badge-icon owned" title="100 Points">💯</span>
+                <span class="badge-icon" title="Iron Man — Locked">🔒</span>
+                <span class="badge-icon" title="World Tree — Locked">🌍</span>
+                <span class="badge-icon" title="Perfect Month — Locked">📅</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ======================================================
+             ROW 3: QR Check-In + Attendance Analytics
+             ====================================================== -->
+        <div class="card-grid">
+          <!-- QR Check-In -->
+          <div class="glass-card" id="qr-card">
+            <div class="card-header"><div class="card-title">📱 QR Check-In</div></div>
+            <div class="qr-section">
+              <div class="qr-code">
+                <!-- Stylized QR code SVG -->
+                <svg viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="90" height="90" fill="#fff" />
+                  <!-- Simplified QR pattern -->
+                  <rect x="5" y="5" width="25" height="25" rx="2" fill="#1a1a1a" />
+                  <rect x="8" y="8" width="19" height="19" rx="1" fill="#fff" />
+                  <rect x="12" y="12" width="11" height="11" rx="1" fill="#1a1a1a" />
+
+                  <rect x="60" y="5" width="25" height="25" rx="2" fill="#1a1a1a" />
+                  <rect x="63" y="8" width="19" height="19" rx="1" fill="#fff" />
+                  <rect x="67" y="12" width="11" height="11" rx="1" fill="#1a1a1a" />
+
+                  <rect x="5" y="60" width="25" height="25" rx="2" fill="#1a1a1a" />
+                  <rect x="8" y="63" width="19" height="19" rx="1" fill="#fff" />
+                  <rect x="12" y="67" width="11" height="11" rx="1" fill="#1a1a1a" />
+
+                  <!-- Data modules -->
+                  <rect x="36" y="8" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+                  <rect x="44" y="8" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+                  <rect x="52" y="8" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+                  <rect x="36" y="16" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+                  <rect x="44" y="16" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+                  <rect x="52" y="20" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+                  <rect x="36" y="24" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+                  <rect x="48" y="24" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+
+                  <rect x="8" y="36" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+                  <rect x="16" y="36" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+                  <rect x="28" y="36" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+                  <rect x="36" y="36" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+                  <rect x="48" y="36" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+                  <rect x="56" y="36" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+                  <rect x="64" y="36" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+                  <rect x="76" y="36" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+
+                  <rect x="8" y="44" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+                  <rect x="20" y="44" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+                  <rect x="28" y="44" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+                  <rect x="36" y="44" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+                  <rect x="48" y="44" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+                  <rect x="60" y="44" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+                  <rect x="68" y="44" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+                  <rect x="76" y="44" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+
+                  <rect x="8" y="52" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+                  <rect x="16" y="56" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+                  <rect x="28" y="52" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+                  <rect x="40" y="56" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+                  <rect x="52" y="52" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+                  <rect x="64" y="56" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+                  <rect x="76" y="52" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+
+                  <rect x="36" y="64" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+                  <rect x="44" y="64" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+                  <rect x="52" y="64" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+                  <rect x="36" y="72" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+                  <rect x="44" y="72" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+                  <rect x="52" y="72" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+                  <rect x="40" y="80" width="4" height="4" rx="0.5" fill="#1a1a1a" />
+
+                  <!-- Center logo -->
+                  <circle cx="45" cy="45" r="8" fill="#fff" stroke="#1a1a1a" stroke-width="1.5" />
+                  <text x="45" y="48.5" text-anchor="middle" font-size="9" font-weight="800" fill="#1a1a1a">🌿</text>
+                </svg>
+              </div>
+              <div class="qr-info">
+                <span class="qr-title">Scan to Check In</span>
+                <div class="qr-verification">
+                  <div class="v-row"><span class="v-dot verified"></span> GPS Verified — Office Location</div>
+                  <div class="v-row"><span class="v-dot verified"></span> IP Verified — 192.168.1.45</div>
+                  <div class="v-row"><span class="v-dot verified"></span> Device: MacBook Pro · Chrome</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Attendance Analytics -->
+          <div class="glass-card col-span-2" id="analytics-card">
+            <div class="card-header">
+              <div class="card-title">📊 Monthly Analytics — April 2025</div>
+              <span style="font-size:12px;color:var(--muted);">16 days tracked</span>
+            </div>
+            <div class="analytics-row">
+              <div class="analytics-item">
+                <span class="a-label">Attendance Rate</span>
+                <span class="a-value" style="color:var(--accent);">90%</span>
+                <div class="analytics-bar-wrap"><div class="analytics-bar-fill green" style="width:90%;"></div></div>
+                <span style="font-size:10px;color:var(--muted);">14 / 16 days present</span>
+              </div>
+              <div class="analytics-item">
+                <span class="a-label">On Time</span>
+                <span class="a-value" style="color:var(--green-status);">82%</span>
+                <div class="analytics-bar-wrap"><div class="analytics-bar-fill green" style="width:82%;"></div></div>
+                <span style="font-size:10px;color:var(--muted);">13 / 16 days</span>
+              </div>
+              <div class="analytics-item">
+                <span class="a-label">Late Arrivals</span>
+                <span class="a-value" style="color:var(--gold);">12%</span>
+                <div class="analytics-bar-wrap"><div class="analytics-bar-fill gold" style="width:12%;"></div></div>
+                <span style="font-size:10px;color:var(--muted);">2 / 16 days</span>
+              </div>
+              <div class="analytics-item">
+                <span class="a-label">Absent</span>
+                <span class="a-value" style="color:var(--red-status);">6%</span>
+                <div class="analytics-bar-wrap"><div class="analytics-bar-fill red" style="width:6%;"></div></div>
+                <span style="font-size:10px;color:var(--muted);">1 / 16 days</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ======================================================
+             ROW 4: Leave + Calendar + Rewards
+             ====================================================== -->
+        <div class="card-grid">
+          <!-- Leave -->
+          <div class="glass-card" id="leave-card">
+            <div class="card-header">
+              <div class="card-title">Leave Balances</div>
+              <span style="font-size:11px;color:var(--muted);"><span class="pending-dot"></span> 2 pending</span>
+            </div>
+            <div class="leave-mini">
+              <div class="leave-chip annual">
+                <span class="lc-type">Annual Leave</span>
+                <span class="lc-days">12</span>
+                <span style="font-size:10px;color:var(--muted);">days left</span>
+              </div>
+              <div class="leave-chip medical">
+                <span class="lc-type">Medical Leave</span>
+                <span class="lc-days">8</span>
+                <span style="font-size:10px;color:var(--muted);">days left</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Calendar -->
+          <div class="glass-card" id="calendar-card">
+            <div class="card-header">
+              <div class="card-title" id="cal-title">April 2025</div>
+              <div class="cal-month-nav">
+                <button id="cal-prev">‹</button>
+                <button id="cal-next">›</button>
+              </div>
+            </div>
+            <div class="cal-mini" id="cal-grid"></div>
+            <div class="cal-legend">
+              <span><span class="dot" style="background:oklch(60% 0.18 145);"></span>Present</span>
+              <span><span class="dot" style="background:oklch(53% 0.22 22);"></span>Absent</span>
+              <span><span class="dot" style="background:oklch(56% 0.16 255);"></span>Annual</span>
+              <span><span class="dot" style="background:oklch(68% 0.14 85);"></span>Medical</span>
+              <span><span class="dot" style="background:oklch(53% 0.18 310);"></span>Holiday</span>
+              <span><span class="dot" style="background:oklch(68% 0.005 250);"></span>Unpaid</span>
+            </div>
+          </div>
+
+          <!-- Rewards -->
+          <div class="glass-card" id="rewards-card">
+            <div class="card-header">
+              <div class="card-title">🎁 Rewards Store</div>
+              <span style="font-size:11px;color:var(--muted);">Balance: 1,250 pts</span>
+            </div>
+            <div class="reward-row">
+              <div class="reward-item">
+                <div class="reward-icon" style="background:oklch(92% 0.05 85);">☕</div>
+                <div class="reward-info"><div class="reward-name">Coffee Voucher</div><div class="reward-cost">500 pts</div></div>
+                <button class="btn-redeem">Redeem</button>
+              </div>
+              <div class="reward-item">
+                <div class="reward-icon" style="background:oklch(92% 0.05 200);">🎬</div>
+                <div class="reward-info"><div class="reward-name">Movie Ticket</div><div class="reward-cost">1,200 pts</div></div>
+                <button class="btn-redeem">Redeem</button>
+              </div>
+              <div class="reward-item">
+                <div class="reward-icon" style="background:oklch(90% 0.04 310);">🎁</div>
+                <div class="reward-info"><div class="reward-name">Mystery Box</div><div class="reward-cost">800 pts</div></div>
+                <button class="btn-redeem" disabled>Need 800</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script>
+    /* ============================================================
+       LeafPoint Dashboard — Interactions
+       ============================================================ */
+
+    // ---- App State ----
+    const state = {
+      checkedIn: true,
+      checkInTime: '08:32',
+      checkOutTime: null,
+      points: 1250,
+      streak: 12,
+      treeStage: 4,
+      treeHealth: 'healthy', // 'healthy' | 'withered' | 'recovering'
+      treeProgress: 65,
+      highestStage: 5,
+      recoveryProgress: 0,
+      calendarMonth: 3,  // April = 3
+      calendarYear: 2025,
+    };
+
+    // ---- DOM refs ----
+    const $ = (s) => document.querySelector(s);
+    const $$ = (s) => document.querySelectorAll(s);
+
+    // ---- Date formatting ----
+    function formatHeaderDate() {
+      const d = new Date();
+      $('#header-date').textContent = d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    }
+    formatHeaderDate();
+
+    function nowTimeStr() {
+      const d = new Date();
+      return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    }
+
+    // ---- Check In / Out ----
+    function updateAttendanceUI() {
+      const ci = $('#btn-check-in'), co = $('#btn-check-out');
+      if (state.checkedIn) {
+        ci.disabled = true; co.disabled = false;
+        $('#check-in-time-label').textContent = state.checkInTime + ' AM';
+        $('#check-out-time-label').textContent = state.checkOutTime ? state.checkOutTime + ' PM' : '—:— —';
+        $('#status-in').textContent = state.checkInTime + ' AM';
+        $('#status-out').textContent = state.checkOutTime ? state.checkOutTime + ' PM' : '—:— —';
+        $('#status-label').textContent = 'On Time';
+        $('#status-label').style.color = 'var(--green-status)';
+        $('#attendance-badge').textContent = '✅ Checked In';
+        $('#attendance-badge').style.color = 'var(--green-status)';
+        ci.style.animation = 'none';
+      } else {
+        ci.disabled = false; co.disabled = true;
+        $('#check-in-time-label').textContent = '—:— —';
+        $('#check-out-time-label').textContent = state.checkOutTime ? state.checkOutTime + ' PM' : '—:— —';
+        $('#status-in').textContent = '—:— —';
+        $('#status-out').textContent = state.checkOutTime ? state.checkOutTime + ' PM' : '—:— —';
+        $('#status-label').textContent = 'Not Checked In';
+        $('#status-label').style.color = 'var(--red-status)';
+        $('#attendance-badge').textContent = '⚠️ Not Checked In';
+        $('#attendance-badge').style.color = 'var(--red-status)';
+        ci.style.animation = 'checkInPulse 2.2s ease-in-out infinite';
+      }
+    }
+
+    $('#btn-check-in').addEventListener('click', () => {
+      if (state.checkedIn) return;
+      state.checkedIn = true;
+      state.checkInTime = nowTimeStr().replace(' AM','').replace(' PM','');
+      state.checkOutTime = null;
+      updateAttendanceUI();
+    });
+    $('#btn-check-out').addEventListener('click', () => {
+      if (!state.checkedIn) return;
+      state.checkedIn = false;
+      state.checkOutTime = nowTimeStr().replace(' AM','').replace(' PM','');
+      updateAttendanceUI();
+    });
+    updateAttendanceUI();
+
+    // ---- Tree Health Toggle (demo) ----
+    function setTreeHealth(health) {
+      state.treeHealth = health;
+      const visual = $('#tree-visual');
+      const badge = $('#tree-health-badge');
+      const recovery = $('#recovery-section');
+
+      visual.classList.remove('healthy', 'withered', 'recovering');
+      badge.classList.remove('healthy', 'withered', 'recovering');
+
+      if (health === 'healthy') {
+        visual.classList.add('healthy');
+        badge.classList.add('healthy');
+        badge.innerHTML = '🌱 Healthy';
+        recovery.style.display = 'none';
+        $('#tree-hero').style.boxShadow = 'var(--shadow-card), var(--shadow-glow)';
+      } else if (health === 'withered') {
+        visual.classList.add('withered');
+        badge.classList.add('withered');
+        badge.innerHTML = '🍂 Withered';
+        recovery.style.display = 'flex';
+        $('#recovery-fill').style.width = '0%';
+        $('#recovery-pct').textContent = '0%';
+        $('#tree-hero').style.boxShadow = 'var(--shadow-card), 0 0 60px oklch(68% 0.14 85 / 0.3)';
+      } else if (health === 'recovering') {
+        visual.classList.add('recovering');
+        badge.classList.add('recovering');
+        badge.innerHTML = '🔄 Recovering';
+        recovery.style.display = 'flex';
+        let prog = 0;
+        const recoveryInterval = setInterval(() => {
+          prog += 2;
+          if (prog >= 100) {
+            prog = 100;
+            clearInterval(recoveryInterval);
+            setTimeout(() => setTreeHealth('healthy'), 600);
+          }
+          $('#recovery-fill').style.width = prog + '%';
+          $('#recovery-pct').textContent = prog + '%';
+        }, 50);
+      }
+    }
+
+    // Stage dot click to demo tree health changes
+    $$('.stage-dot').forEach(dot => {
+      dot.addEventListener('click', function() {
+        const stage = parseInt(this.dataset.stage);
+        if (stage === state.treeStage) {
+          // Cycle health: healthy → withered → recovering
+          if (state.treeHealth === 'healthy') setTreeHealth('withered');
+          else if (state.treeHealth === 'withered') setTreeHealth('recovering');
+          // recovering auto-cycles back to healthy
+        }
+      });
+    });
+
+    // ---- Calendar ----
+    const attendanceData = {
+      '2025-4-1':'present','2025-4-2':'present','2025-4-3':'present',
+      '2025-4-4':'present','2025-4-7':'present','2025-4-8':'present',
+      '2025-4-9':'absent','2025-4-10':'present','2025-4-11':'present',
+      '2025-4-14':'annual-leave','2025-4-15':'annual-leave',
+      '2025-4-16':'present',
+      '2025-4-18':'public-holiday',
+      '2025-4-21':'medical-leave',
+      '2025-4-22':'present','2025-4-23':'present','2025-4-24':'present',
+      '2025-4-25':'present',
+      '2025-4-28':'unpaid','2025-4-29':'unpaid','2025-4-30':'present',
+    };
+
+    function renderCalendar() {
+      const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      $('#cal-title').textContent = `${months[state.calendarMonth]} ${state.calendarYear}`;
+
+      const firstDay = new Date(state.calendarYear, state.calendarMonth, 1).getDay();
+      const daysInMonth = new Date(state.calendarYear, state.calendarMonth + 1, 0).getDate();
+      const daysInPrev = new Date(state.calendarYear, state.calendarMonth, 0).getDate();
+      const today = new Date();
+      const headers = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+      let html = headers.map(h => `<div class="cal-day-header">${h}</div>`).join('');
+
+      for (let i = firstDay - 1; i >= 0; i--) {
+        html += `<div class="cal-day other-month">${daysInPrev - i}</div>`;
+      }
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const key = `${state.calendarYear}-${state.calendarMonth + 1}-${d}`;
+        const type = attendanceData[key] || '';
+        let cls = 'cal-day';
+        if (type) cls += ' ' + type;
+        if (today.getFullYear() === state.calendarYear && today.getMonth() === state.calendarMonth && today.getDate() === d) cls += ' today';
+        html += `<div class="${cls}">${d}</div>`;
+      }
+
+      const total = firstDay + daysInMonth;
+      const rem = total % 7 === 0 ? 0 : 7 - (total % 7);
+      for (let d = 1; d <= rem; d++) {
+        html += `<div class="cal-day other-month">${d}</div>`;
+      }
+
+      $('#cal-grid').innerHTML = html;
+    }
+
+    $('#cal-prev').addEventListener('click', () => {
+      if (state.calendarMonth === 0) { state.calendarMonth = 11; state.calendarYear--; }
+      else state.calendarMonth--;
+      renderCalendar();
+    });
+    $('#cal-next').addEventListener('click', () => {
+      if (state.calendarMonth === 11) { state.calendarMonth = 0; state.calendarYear++; }
+      else state.calendarMonth++;
+      renderCalendar();
+    });
+    renderCalendar();
+
+    // ---- Rewards ----
+    $$('.btn-redeem:not([disabled])').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const costText = this.closest('.reward-item').querySelector('.reward-cost').textContent;
+        const cost = parseInt(costText);
+        if (state.points >= cost) {
+          state.points -= cost;
+          $('#points-card .points-big').textContent = state.points.toLocaleString();
+          const pill = document.querySelector('.pill-points');
+          if (pill) pill.textContent = '⭐ ' + state.points.toLocaleString() + ' Points';
+          const bal = document.querySelector('#rewards-card .card-header span');
+          if (bal) bal.textContent = 'Balance: ' + state.points.toLocaleString() + ' pts';
+          this.textContent = '✓ Done!';
+          this.style.background = 'oklch(74% 0.08 145)';
+          setTimeout(() => { this.textContent = 'Redeem'; this.style.background = ''; }, 1800);
+        }
+      });
+    });
+
+    // ---- Sidebar nav ----
+    $$('.sidebar-nav button').forEach(btn => {
+      btn.addEventListener('click', function() {
+        $$('.sidebar-nav button').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+
+    console.log('🌿 LeafPoint v2 — World Tree Dashboard ready.');
+    console.log('💡 Click the current stage dot (🌸) to demo tree health states: Healthy → Withered → Recovering');
+  </script>
+</body>
+</html>

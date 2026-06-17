@@ -1,71 +1,3 @@
-<?php
-session_start();
-require_once 'db.php';
-
-// Function to route users based on role
-function routeUser($role) {
-    if ($role === 'admin') {
-        header("Location: Boss/admin_dashboard.php");
-    } else {
-        header("Location: Employee/employee_dashboard.php");
-    }
-    exit();
-}
-
-// 1. Check if already logged in via Session
-if (isset($_SESSION['user_id'])) {
-    routeUser($_SESSION['role']);
-}
-
-// 2. Check if seamless "Remember Me" cookie exists (For QR Code scannings)
-if (isset($_COOKIE['remember_token'])) {
-    $token = $_COOKIE['remember_token'];
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE remember_token = ? LIMIT 1");
-    $stmt->execute([$token]);
-    $user = $stmt->fetch();
-
-    if ($user) {
-        $_SESSION['user_id'] = $user['id'];
-        $_SESSION['role'] = $user['role'];
-        $_SESSION['name'] = $user['name'];
-        routeUser($user['role']);
-    }
-}
-
-$error = '';
-
-// 3. Handle Form Submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = trim($_POST['email']);
-    $password = $_POST['password'];
-    $remember = isset($_POST['remember']);
-
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ? LIMIT 1");
-    $stmt->execute([$email]);
-    $user = $stmt->fetch();
-
-    // Verify Password
-    if ($user && password_verify($password, $user['password_hash'])) {
-        $_SESSION['user_id'] = $user['id'];
-        $_SESSION['role'] = $user['role'];
-        $_SESSION['name'] = $user['name'];
-
-        // If 'Remember Me' is checked, generate a token and save to DB + Cookie
-        if ($remember) {
-            $token = bin2hex(random_bytes(32));
-            // Save to DB
-            $updateToken = $pdo->prepare("UPDATE users SET remember_token = ? WHERE id = ?");
-            $updateToken->execute([$token, $user['id']]);
-            // Save to browser cookie (lasts 30 days)
-            setcookie('remember_token', $token, time() + (86400 * 30), "/");
-        }
-
-        routeUser($user['role']);
-    } else {
-        $error = "Invalid email or password.";
-    }
-}
-?>
 <!doctype html>
 <html lang="en">
 <head>
@@ -125,24 +57,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     /* ============================================================
-       LOGIN CARD — single centered card
+       LOGIN SHELL — full-screen centering
        ============================================================ */
-    .login-card {
+    .login-shell {
       width: 100%;
-      max-width: 460px;
-      padding: 44px 40px 40px;
-      display: flex; flex-direction: column; gap: 24px;
+      max-width: 880px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
       background: var(--surface);
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
       border: 1px solid var(--border);
       border-radius: var(--radius-xl);
       box-shadow: var(--shadow-elevated);
-      animation: cardIn 0.5s ease-out;
+      overflow: hidden;
+      animation: shellIn 0.5s ease-out;
     }
-    @keyframes cardIn {
+    @keyframes shellIn {
       from { opacity: 0; transform: translateY(12px) scale(0.99); }
       to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* ============================================================
+       LEFT PANE — Login form
+       ============================================================ */
+    .login-form-pane {
+      padding: 40px 36px 36px;
+      display: flex; flex-direction: column; gap: 24px;
+      background: var(--surface-solid);
     }
 
     .login-logo {
@@ -279,10 +221,76 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     .sso-btn:hover { background: var(--surface-solid); border-color: oklch(80% 0.03 250); }
 
+    /* ============================================================
+       RIGHT PANE — Tree illustration + stats
+       ============================================================ */
+    .login-illustration-pane {
+      padding: 32px 28px;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 20px;
+      background: radial-gradient(ellipse at 50% 40%, oklch(62% 0.12 148 / 0.08), transparent 70%),
+                  oklch(98% 0.005 250);
+      position: relative;
+      overflow: hidden;
+    }
+    .login-illustration-pane::before {
+      content: '';
+      position: absolute; top: -60px; right: -40px;
+      width: 220px; height: 220px;
+      background: radial-gradient(circle, oklch(62% 0.18 148 / 0.08), transparent 70%);
+      pointer-events: none;
+    }
+    .login-illustration-pane::after {
+      content: '';
+      position: absolute; bottom: -40px; left: -30px;
+      width: 180px; height: 180px;
+      background: radial-gradient(circle, oklch(72% 0.10 170 / 0.06), transparent 70%);
+      pointer-events: none;
+    }
+    .tree-ill-wrap {
+      width: 180px; height: 220px;
+      position: relative; z-index: 1;
+    }
+    .tree-ill-wrap svg { width: 100%; height: 100%; display: block; }
+    @keyframes treeFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+    .tree-ill-wrap { animation: treeFloat 5s ease-in-out infinite; }
+
+    .stats-card {
+      background: var(--surface);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px 20px;
+      display: flex; gap: 20px;
+      z-index: 1; width: 100%;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.03);
+    }
+    .stat-item {
+      display: flex; flex-direction: column; gap: 2px;
+      flex: 1; text-align: center;
+    }
+    .stat-item:first-child { border-right: 1px solid var(--border-subtle); padding-right: 16px; }
+    .stat-value {
+      font-family: var(--font-display);
+      font-size: 22px; font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--accent);
+    }
+    .stat-label {
+      font-size: 11px; color: var(--muted);
+      font-weight: 600; letter-spacing: 0.02em;
+    }
+
     .login-footer {
       text-align: center; font-size: 11px; color: var(--muted);
-      padding: 6px 0 0;
+      grid-column: 1 / -1;
+      padding: 14px 0 4px;
       border-top: 1px solid var(--border-subtle);
+      margin: 0 36px;
     }
 
     /* ============================================================
@@ -295,7 +303,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       font: 14px/1.3 var(--font-body); font-weight: 700;
       box-shadow: 0 8px 28px var(--accent-glow);
       z-index: 1000;
-      animation: toastIn 0.35s ease-out, toastOut 0.35s 3.5s ease-out forwards;
+      animation: toastIn 0.35s ease-out, toastOut 0.35s 2.2s ease-out forwards;
       pointer-events: none;
     }
     .toast.error { background: var(--red); box-shadow: 0 8px 28px oklch(53% 0.22 22 / 0.3); }
@@ -305,16 +313,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     /* ============================================================
        RESPONSIVE
        ============================================================ */
-    @media (max-width: 500px) {
-      .login-card {
-        max-width: 100%;
-        padding: 32px 24px 28px;
-        border-radius: var(--radius-lg);
+    @media (max-width: 700px) {
+      .login-shell {
+        grid-template-columns: 1fr;
+        max-width: 420px;
       }
+      .login-illustration-pane {
+        order: -1;
+        padding: 24px 16px 16px;
+        gap: 12px;
+      }
+      .tree-ill-wrap { width: 120px; height: 150px; }
+      .login-form-pane { padding: 20px 20px 28px; gap: 18px; }
       .login-welcome h1 { font-size: 22px; }
+      .stats-card { padding: 12px 16px; gap: 12px; }
+      .stat-value { font-size: 18px; }
+      .login-footer { margin: 0 20px; }
     }
     @media (max-width: 380px) {
-      .login-card { padding: 24px 16px 22px; }
+      .login-shell { border-radius: var(--radius-lg); }
+      .login-form-pane { padding: 16px 14px 22px; }
       .form-row { flex-direction: column; gap: 10px; align-items: flex-start; }
       .forgot-link { align-self: flex-end; }
     }
@@ -323,73 +341,144 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
 
 <!-- ============================================================
-     LOGIN CARD
+     LOGIN SHELL
      ============================================================ -->
-<div class="login-card" id="login-card">
+<div class="login-shell" id="login-shell">
 
-  <div class="login-logo">
-    <span class="logo-icon">🌳</span>
-    LeafPoint
-  </div>
-  <div class="login-welcome">
-    <h1>Welcome Back</h1>
-    <p>Sign in to continue your attendance journey</p>
-  </div>
-
-  <form id="login-form" method="POST" action="" novalidate autocomplete="on">
-    <div style="display:flex;flex-direction:column;gap:18px;">
-
-      <!-- Email -->
-      <div class="form-group">
-        <label class="form-label" for="email">Email Address</label>
-        <div class="form-input-wrap">
-          <input class="form-input" type="email" id="email" name="email"
-                 placeholder="you@company.com"
-                 autocomplete="email" required />
-        </div>
-        <span class="form-error-msg" id="email-error"></span>
-      </div>
-
-      <!-- Password -->
-      <div class="form-group">
-        <label class="form-label" for="password">Password</label>
-        <div class="form-input-wrap">
-          <input class="form-input" type="password" id="password" name="password"
-                 placeholder="••••••••"
-                 autocomplete="current-password" required minlength="6" />
-        </div>
-        <span class="form-error-msg" id="password-error"></span>
-      </div>
-
-      <!-- Remember + Forgot -->
-      <div class="form-row">
-        <label class="remember-me">
-          <input type="checkbox" id="remember" name="remember" />
-          Remember me
-        </label>
-        <a href="#" class="forgot-link" id="forgot-link">Forgot Password?</a>
-      </div>
-
-      <!-- Login button -->
-      <button type="submit" class="login-btn" id="login-btn">
-        <span class="btn-text">Sign In</span>
-        <span class="spinner"><span class="spinner-ring"></span></span>
-      </button>
-
-      <!-- Divider -->
-      <div class="divider">or continue with</div>
-
-      <!-- SSO -->
-      <button type="button" class="sso-btn" id="sso-btn">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="1" y="1" width="22" height="22" rx="4" stroke="currentColor" stroke-width="1.5"/><path d="M19 12H5M12 5l-7 7 7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="17" cy="12" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg>
-        Single Sign-On
-      </button>
-
+  <!-- ---- LEFT: Form ---- -->
+  <div class="login-form-pane">
+    <div class="login-logo">
+      <span class="logo-icon">🌳</span>
+      LeafPoint
     </div>
-  </form>
+    <div class="login-welcome">
+      <h1>Welcome Back</h1>
+      <p>Sign in to continue your attendance journey</p>
+    </div>
 
+    <form id="login-form" novalidate autocomplete="on">
+      <div style="display:flex;flex-direction:column;gap:18px;">
+
+        <!-- Email -->
+        <div class="form-group">
+          <label class="form-label" for="email">Email Address</label>
+          <div class="form-input-wrap">
+            <input class="form-input" type="email" id="email" name="email"
+                   placeholder="you@company.com"
+                   autocomplete="email" required />
+          </div>
+          <span class="form-error-msg" id="email-error"></span>
+        </div>
+
+        <!-- Password -->
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <div class="form-input-wrap">
+            <input class="form-input" type="password" id="password" name="password"
+                   placeholder="••••••••"
+                   autocomplete="current-password" required minlength="6" />
+          </div>
+          <span class="form-error-msg" id="password-error"></span>
+        </div>
+
+        <!-- Remember + Forgot -->
+        <div class="form-row">
+          <label class="remember-me">
+            <input type="checkbox" id="remember" />
+            Remember me
+          </label>
+          <a href="#" class="forgot-link" id="forgot-link">Forgot Password?</a>
+        </div>
+
+        <!-- Login button -->
+        <button type="submit" class="login-btn" id="login-btn">
+          <span class="btn-text">Sign In</span>
+          <span class="spinner"><span class="spinner-ring"></span></span>
+        </button>
+
+        <!-- Divider -->
+        <div class="divider">or continue with</div>
+
+        <!-- SSO -->
+        <button type="button" class="sso-btn" id="sso-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="1" y="1" width="22" height="22" rx="4" stroke="currentColor" stroke-width="1.5"/><path d="M19 12H5M12 5l-7 7 7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="17" cy="12" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg>
+          Single Sign-On
+        </button>
+
+      </div>
+    </form>
+  </div>
+
+  <!-- ---- RIGHT: Tree illustration + stats ---- -->
+  <div class="login-illustration-pane">
+    <div class="tree-ill-wrap">
+      <!-- Blooming Tree (Stage 4) — simplified for illustration -->
+      <svg viewBox="0 0 220 290" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="leaf1" cx="50%" cy="30%" r="60%">
+            <stop offset="0%" stop-color="#4CAF50"/>
+            <stop offset="100%" stop-color="#1E5E24"/>
+          </radialGradient>
+          <radialGradient id="leaf2" cx="50%" cy="35%" r="55%">
+            <stop offset="0%" stop-color="#6FBF6F"/>
+            <stop offset="100%" stop-color="#2E6B2E"/>
+          </radialGradient>
+          <radialGradient id="blossom" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#FFD1DC"/>
+            <stop offset="100%" stop-color="#E8879B"/>
+          </radialGradient>
+        </defs>
+        <!-- Shadow -->
+        <ellipse cx="110" cy="264" rx="48" ry="7" fill="#00000012"/>
+        <!-- Soil -->
+        <ellipse cx="110" cy="256" rx="32" ry="6" fill="#6B4F12" opacity="0.5"/>
+        <ellipse cx="110" cy="253" rx="26" ry="4.5" fill="#5C3D0E" opacity="0.4"/>
+        <!-- Trunk -->
+        <path d="M103 253 Q100 222 95 185 Q90 150 88 115 Q84 92 86 76" stroke="#5D4037" stroke-width="11" stroke-linecap="round" fill="none"/>
+        <path d="M117 253 Q114 222 110 185 Q106 150 104 115 Q100 92 102 76" stroke="#4E342E" stroke-width="8" stroke-linecap="round" fill="none"/>
+        <!-- Branches -->
+        <path d="M95 150 Q78 135 58 118" stroke="#5D4037" stroke-width="5.5" stroke-linecap="round" fill="none"/>
+        <path d="M106 138 Q124 120 142 106" stroke="#4E342E" stroke-width="5" stroke-linecap="round" fill="none"/>
+        <path d="M95 115 Q76 98 64 78" stroke="#5D4037" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+        <path d="M104 104 Q118 84 128 64" stroke="#4E342E" stroke-width="4" stroke-linecap="round" fill="none"/>
+        <path d="M88 88 Q70 72 58 52" stroke="#5D4037" stroke-width="3" stroke-linecap="round" fill="none"/>
+        <!-- Canopy -->
+        <circle cx="84" cy="70" r="24" fill="url(#leaf1)"/>
+        <circle cx="106" cy="54" r="28" fill="url(#leaf2)"/>
+        <circle cx="126" cy="66" r="22" fill="url(#leaf1)"/>
+        <circle cx="62" cy="58" r="18" fill="url(#leaf2)"/>
+        <circle cx="142" cy="60" r="16" fill="url(#leaf1)"/>
+        <circle cx="94" cy="40" r="20" fill="url(#leaf2)"/>
+        <circle cx="114" cy="36" r="18" fill="url(#leaf1)"/>
+        <circle cx="78" cy="32" r="14" fill="url(#leaf2)"/>
+        <circle cx="136" cy="48" r="13" fill="url(#leaf1)"/>
+        <!-- Blossoms -->
+        <circle cx="80" cy="62" r="4.5" fill="url(#blossom)"/>
+        <circle cx="106" cy="46" r="5.5" fill="url(#blossom)"/>
+        <circle cx="128" cy="58" r="4" fill="url(#blossom)"/>
+        <circle cx="64" cy="50" r="3.5" fill="url(#blossom)"/>
+        <circle cx="140" cy="52" r="3" fill="url(#blossom)"/>
+        <circle cx="94" cy="32" r="3.5" fill="url(#blossom)"/>
+        <circle cx="116" cy="28" r="3" fill="url(#blossom)"/>
+        <circle cx="74" cy="26" r="2.5" fill="url(#blossom)"/>
+      </svg>
+    </div>
+
+    <div class="stats-card">
+      <div class="stat-item">
+        <span class="stat-value">1,245</span>
+        <span class="stat-label">Check-ins Completed</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-value">98%</span>
+        <span class="stat-label">Attendance Rate</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---- Footer ---- -->
   <div class="login-footer">
-    &copy; <?= date('Y') ?> LeafPoint Attendance System. All rights reserved.
+    © 2025 LeafPoint Attendance System. All rights reserved.
   </div>
 
 </div>
@@ -416,13 +505,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     toast.className = 'toast ' + (type === 'error' ? 'error' : '');
     toast.textContent = msg;
     document.body.appendChild(toast);
-    setTimeout(function() { toast.remove(); }, 4000);
+    setTimeout(function() { toast.remove(); }, 2600);
   }
-
-  // ---- Show PHP error as toast on page load ----
-  <?php if ($error): ?>
-  showToast(<?= json_encode($error) ?>, 'error');
-  <?php endif; ?>
 
   // ---- VALIDATION ----
   function validateEmail(email) {
@@ -497,6 +581,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   // ---- FORM SUBMIT ----
   form.addEventListener('submit', function(e) {
+    e.preventDefault();
     clearErrors();
 
     let hasError = false;
@@ -524,19 +609,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (hasError) {
-      e.preventDefault();
+      // Focus first error
       const firstError = form.querySelector('.form-input.error');
       if (firstError) firstError.focus();
       return;
     }
 
-    // Validation passed — show loading state, then let form submit to PHP
+    // Simulate login
     setLoading(true);
+    setTimeout(function() {
+      setLoading(false);
+      const remember = document.getElementById('remember').checked;
+      showToast('✓ Signed in successfully! Welcome back.', 'success');
 
-    // Store remembered email before submit
-    if (document.getElementById('remember').checked) {
-      try { localStorage.setItem('leafpoint_remembered_email', emailInput.value.trim()); } catch(_) {}
-    }
+      // Briefly flash the shell
+      var shell = document.getElementById('login-shell');
+      shell.style.boxShadow = '0 0 0 6px var(--accent-glow), var(--shadow-elevated)';
+      setTimeout(function() {
+        shell.style.boxShadow = 'var(--shadow-elevated)';
+      }, 600);
+
+      if (remember) {
+        try { localStorage.setItem('leafpoint_remembered_email', emailInput.value.trim()); } catch(_) {}
+      }
+    }, 1600);
   });
 
   // ---- FORGOT PASSWORD ----
@@ -553,7 +649,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   // ---- SSO ----
   ssoBtn.addEventListener('click', function() {
-    showToast('SSO is not configured yet. Please use email and password.');
+    setLoading(true);
+    setTimeout(function() {
+      setLoading(false);
+      showToast('SSO redirect initiated…');
+    }, 1000);
   });
 
   // ---- Restore remembered email ----
@@ -565,7 +665,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
   } catch(_) {}
 
-  // ---- Keyboard shortcut — Enter focuses email ----
+  // ---- Keyboard shortcut — Enter submits ----
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Enter' && document.activeElement === document.body) {
       emailInput.focus();

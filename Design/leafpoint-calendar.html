@@ -1,0 +1,794 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Attendance Calendar — LeafPoint</title>
+  <style>
+    /* ============================================================
+       DESIGN TOKENS — LeafPoint System
+       ============================================================ */
+    :root {
+      --bg: oklch(97% 0.005 245);
+      --bg-gradient: radial-gradient(ellipse at 50% 0%, oklch(90% 0.04 170 / 0.2), oklch(97% 0.004 245) 55%);
+      --surface-glass: rgba(255, 255, 255, 0.55);
+      --surface-glass-hover: rgba(255, 255, 255, 0.74);
+      --surface-solid: #ffffff;
+      --fg: oklch(16% 0.018 252);
+      --fg-secondary: oklch(38% 0.022 250);
+      --muted: oklch(54% 0.016 250);
+      --border-glass: rgba(255, 255, 255, 0.4);
+      --border-subtle: rgba(0, 0, 0, 0.055);
+
+      --accent: oklch(56% 0.19 148);
+      --accent-soft: oklch(74% 0.14 148);
+      --accent-glow: oklch(62% 0.21 148 / 0.35);
+      --gold: oklch(70% 0.19 82);
+      --gold-soft: oklch(82% 0.13 82);
+
+      --green-present: oklch(62% 0.18 145);
+      --red-absent: oklch(55% 0.22 22);
+      --blue-annual: oklch(58% 0.17 255);
+      --yellow-medical: oklch(70% 0.16 88);
+      --purple-holiday: oklch(55% 0.18 310);
+      --gray-unpaid: oklch(70% 0.005 250);
+      --future: transparent;
+
+      --radius-sm: 10px;
+      --radius-md: 16px;
+      --radius-lg: 22px;
+      --radius-xl: 28px;
+      --shadow-card: 0 2px 16px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.03);
+      --shadow-card-hover: 0 6px 28px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.04);
+
+      --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+      --font-mono: 'SF Mono', ui-monospace, 'JetBrains Mono', Menlo, monospace;
+
+      --bottom-nav-h: 68px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; min-height: 100%;
+      font-family: var(--font-body);
+      color: var(--fg);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ---- Page shell (mobile-first) ---- */
+    .page {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 0 16px 100px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-height: 100vh;
+    }
+
+    /* ---- Top bar ---- */
+    .topbar {
+      position: sticky; top: 0; z-index: 20;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 0 10px;
+      background: oklch(97% 0.005 245 / 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .topbar .back-btn {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--surface-glass); border: 1px solid var(--border-subtle);
+      display: grid; place-items: center; font-size: 18px;
+      cursor: pointer; transition: background 0.15s; color: var(--fg);
+      text-decoration: none;
+    }
+    .topbar .back-btn:hover { background: var(--surface-glass-hover); }
+    .topbar .title {
+      font-family: var(--font-display); font-size: 18px; font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .topbar .today-btn {
+      padding: 8px 14px; border-radius: 999px;
+      border: 1.5px solid var(--accent); background: transparent;
+      color: var(--accent); font-size: 12px; font-weight: 700;
+      cursor: pointer; transition: all 0.15s;
+      font-family: var(--font-body);
+    }
+    .topbar .today-btn:hover { background: var(--accent); color: #fff; }
+
+    /* ---- Glass card ---- */
+    .card {
+      background: var(--surface-glass);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      padding: 18px;
+      display: flex; flex-direction: column; gap: 14px;
+      transition: box-shadow 0.2s, background 0.2s;
+    }
+    .card:hover { background: var(--surface-glass-hover); box-shadow: var(--shadow-card-hover); }
+    .card-header {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    }
+    .card-title {
+      font-family: var(--font-display); font-size: 15px; font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+    .card-subtitle { font-size: 11px; color: var(--muted); }
+
+    /* ============================================================
+       MONTH NAVIGATION
+       ============================================================ */
+    .month-nav {
+      display: flex; align-items: center; justify-content: center; gap: 16px;
+    }
+    .month-nav .nav-arrow {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--surface-glass); border: 1px solid var(--border-subtle);
+      display: grid; place-items: center; font-size: 20px;
+      cursor: pointer; transition: all 0.2s; color: var(--fg);
+    }
+    .month-nav .nav-arrow:hover {
+      background: var(--surface-glass-hover);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .month-nav .month-label {
+      font-family: var(--font-display); font-size: 20px; font-weight: 800;
+      letter-spacing: -0.02em; color: var(--fg);
+      min-width: 160px; text-align: center;
+    }
+
+    /* ============================================================
+       CALENDAR GRID
+       ============================================================ */
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+    .cal-day-header {
+      text-align: center;
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em;
+      color: var(--muted); font-weight: 700;
+      padding: 6px 0;
+    }
+    .cal-day-header.weekend { color: oklch(55% 0.05 10 / 0.5); }
+
+    .cal-cell {
+      aspect-ratio: 1;
+      border-radius: var(--radius-sm);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 4px;
+      cursor: pointer; transition: all 0.2s;
+      position: relative; overflow: hidden;
+      font-family: var(--font-mono); font-size: 13px; font-weight: 500;
+      color: var(--fg);
+      background: rgba(0,0,0,0.02);
+      border: 1.5px solid transparent;
+    }
+    .cal-cell:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      border-color: var(--accent-soft);
+      z-index: 2;
+    }
+    .cal-cell.other-month {
+      opacity: 0; pointer-events: none;
+    }
+    .cal-cell.today {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px oklch(56% 0.19 148 / 0.15);
+      font-weight: 800;
+    }
+    .cal-cell .day-num {
+      font-size: 13px; font-weight: 600;
+    }
+    .cal-cell.today .day-num {
+      color: var(--accent);
+      font-weight: 800;
+    }
+    .cal-cell .day-icon {
+      font-size: 16px; line-height: 1;
+    }
+
+    /* ---- Status colors ---- */
+    .cal-cell.present {
+      background: oklch(92% 0.06 145 / 0.6);
+      border-color: oklch(82% 0.08 145 / 0.5);
+    }
+    .cal-cell.absent {
+      background: oklch(92% 0.04 22 / 0.5);
+      border-color: oklch(82% 0.06 22 / 0.4);
+    }
+    .cal-cell.annual-leave {
+      background: oklch(90% 0.06 255 / 0.5);
+      border-color: oklch(80% 0.08 255 / 0.4);
+    }
+    .cal-cell.medical-leave {
+      background: oklch(93% 0.07 88 / 0.5);
+      border-color: oklch(83% 0.08 88 / 0.4);
+    }
+    .cal-cell.public-holiday {
+      background: oklch(92% 0.06 310 / 0.4);
+      border-color: oklch(82% 0.07 310 / 0.35);
+    }
+    .cal-cell.unpaid-leave {
+      background: oklch(91% 0.003 250 / 0.5);
+      border-color: oklch(82% 0.003 250 / 0.4);
+    }
+    .cal-cell.future {
+      background: transparent;
+      border-color: transparent;
+      color: oklch(78% 0.004 250);
+    }
+    .cal-cell.future:hover {
+      border-color: var(--border-subtle);
+      background: rgba(0,0,0,0.015);
+    }
+
+    /* ---- Filtered-out state ---- */
+    .cal-cell.filtered-out {
+      opacity: 0.18; pointer-events: none;
+    }
+
+    /* ---- Status dot on desktop ---- */
+    .cal-cell .status-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .cal-cell.present .status-dot { background: var(--green-present); }
+    .cal-cell.absent .status-dot { background: var(--red-absent); }
+    .cal-cell.annual-leave .status-dot { background: var(--blue-annual); }
+    .cal-cell.medical-leave .status-dot { background: var(--yellow-medical); }
+    .cal-cell.public-holiday .status-dot { background: var(--purple-holiday); }
+    .cal-cell.unpaid-leave .status-dot { background: var(--gray-unpaid); }
+
+    /* ============================================================
+       LEGEND
+       ============================================================ */
+    .legend {
+      display: flex; flex-wrap: wrap; gap: 8px;
+    }
+    .legend-item {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 11px; font-weight: 600; color: var(--fg-secondary);
+    }
+    .legend-dot {
+      width: 10px; height: 10px; border-radius: 3px;
+      flex-shrink: 0;
+    }
+    .legend-dot.present { background: var(--green-present); }
+    .legend-dot.absent { background: var(--red-absent); }
+    .legend-dot.annual { background: var(--blue-annual); }
+    .legend-dot.medical { background: var(--yellow-medical); }
+    .legend-dot.holiday { background: var(--purple-holiday); }
+    .legend-dot.unpaid { background: var(--gray-unpaid); }
+    .legend-dot.future { background: transparent; border: 1.5px dashed oklch(80% 0.004 250); }
+
+    /* ============================================================
+       STATISTICS
+       ============================================================ */
+    .stats-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    }
+    .stat-card {
+      background: rgba(0,0,0,0.02);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      display: flex; flex-direction: column; gap: 4px;
+      transition: transform 0.15s;
+    }
+    .stat-card:hover { transform: translateY(-1px); }
+    .stat-card .stat-icon { font-size: 22px; line-height: 1; }
+    .stat-card .stat-label {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em;
+      color: var(--muted); font-weight: 700;
+    }
+    .stat-card .stat-value {
+      font-family: var(--font-display); font-size: 26px; font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .stat-card.present-stat .stat-value { color: var(--green-present); }
+    .stat-card.absent-stat .stat-value { color: var(--red-absent); }
+    .stat-card.leave-stat .stat-value { color: var(--blue-annual); }
+    .stat-card.rate-stat .stat-value { color: var(--accent); }
+
+    .attendance-rate-ring {
+      display: flex; align-items: center; gap: 14px;
+      padding: 12px 0;
+    }
+    .rate-circle {
+      width: 80px; height: 80px; border-radius: 50%;
+      background: conic-gradient(var(--accent) 0deg 324deg, oklch(90% 0.006 250) 324deg 360deg);
+      display: grid; place-items: center; flex-shrink: 0;
+    }
+    .rate-circle .rate-inner {
+      width: 62px; height: 62px; border-radius: 50%;
+      background: var(--surface-solid);
+      display: grid; place-items: center;
+      font-family: var(--font-display); font-size: 20px; font-weight: 800;
+      color: var(--accent);
+    }
+    .rate-info { display: flex; flex-direction: column; gap: 3px; }
+    .rate-info .rate-label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    .rate-info .rate-detail { font-size: 13px; color: var(--fg-secondary); }
+
+    /* ============================================================
+       QUICK FILTERS
+       ============================================================ */
+    .filter-chips {
+      display: flex; flex-wrap: wrap; gap: 6px;
+    }
+    .filter-chip {
+      padding: 7px 14px; border-radius: 999px;
+      border: 1.5px solid var(--border-subtle);
+      background: transparent; color: var(--fg-secondary);
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      transition: all 0.2s; font-family: var(--font-body);
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+    }
+    .filter-chip:hover { border-color: var(--accent-soft); color: var(--accent); }
+    .filter-chip.active {
+      background: var(--accent); color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 2px 10px oklch(56% 0.19 148 / 0.3);
+    }
+    .filter-chip .chip-count {
+      font-size: 10px; opacity: 0.7; margin-left: 2px;
+    }
+
+    /* ============================================================
+       DAY DETAIL POPOVER (mobile tap / desktop hover)
+       ============================================================ */
+    .cal-cell[data-tooltip]:hover::after {
+      content: attr(data-tooltip);
+      position: absolute; bottom: calc(100% + 8px); left: 50%;
+      transform: translateX(-50%);
+      background: var(--fg); color: #fff;
+      padding: 6px 12px; border-radius: 8px;
+      font-size: 11px; font-weight: 600;
+      white-space: nowrap; pointer-events: none;
+      font-family: var(--font-body);
+      z-index: 10;
+    }
+
+    /* ============================================================
+       BOTTOM NAVIGATION (mobile only)
+       ============================================================ */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
+      height: var(--bottom-nav-h);
+      background: oklch(98% 0.003 250 / 0.88);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-top: 1px solid rgba(0,0,0,0.06);
+      display: flex; align-items: center; justify-content: space-around;
+      padding: 0 8px;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    .bottom-nav .nav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      padding: 6px 10px; border: none; background: none;
+      font: 10px/1 var(--font-body); color: var(--muted);
+      cursor: pointer; transition: color 0.15s; font-weight: 500;
+      min-width: 56px; text-decoration: none;
+    }
+    .bottom-nav .nav-item .nav-icon { font-size: 20px; line-height: 1; }
+    .bottom-nav .nav-item.active { color: var(--accent); font-weight: 700; }
+
+    /* ============================================================
+       RESPONSIVE — Tablet (600px+)
+       ============================================================ */
+    @media (min-width: 600px) {
+      .page {
+        max-width: 720px; padding: 0 24px 40px; gap: 20px;
+      }
+      .bottom-nav { display: none; }
+      .topbar { padding: 18px 0 12px; }
+      .topbar .title { font-size: 20px; }
+      .card { padding: 22px 24px; }
+      .calendar-grid { gap: 5px; }
+      .cal-day-header { font-size: 11px; }
+      .cal-cell { font-size: 14px; }
+      .cal-cell .day-num { font-size: 14px; }
+      .cal-cell .day-icon { font-size: 18px; }
+      .stats-grid { grid-template-columns: repeat(4, 1fr); gap: 12px; }
+      .stat-card .stat-value { font-size: 28px; }
+      .month-nav .month-label { font-size: 24px; min-width: 200px; }
+      .cal-cell[data-tooltip]:hover::after { font-size: 12px; padding: 8px 14px; }
+    }
+
+    /* ============================================================
+       RESPONSIVE — Desktop (1024px+)
+       ============================================================ */
+    @media (min-width: 1024px) {
+      .page {
+        max-width: 1060px; padding: 0 32px 48px; gap: 24px;
+      }
+      .card { padding: 26px 30px; }
+      .card-title { font-size: 17px; }
+      .calendar-grid { gap: 6px; }
+      .cal-day-header { font-size: 12px; padding: 8px 0; }
+      .cal-cell { gap: 6px; }
+      .cal-cell .day-num { font-size: 15px; }
+      .cal-cell .day-icon { font-size: 20px; }
+      .stats-grid { gap: 14px; }
+      .stat-card { padding: 18px; }
+      .stat-card .stat-value { font-size: 32px; }
+      .legend-item { font-size: 12px; }
+    }
+
+    /* ---- Keyboard focus ---- */
+    .cal-cell:focus-visible {
+      outline: 2px solid var(--accent); outline-offset: 2px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==========================================================
+       PAGE
+       ========================================================== -->
+  <div class="page">
+
+    <!-- Top bar -->
+    <header class="topbar">
+      <a class="back-btn" href="#" aria-label="Back" onclick="history.back();return false;">←</a>
+      <span class="title">📅 Attendance Calendar</span>
+      <button class="today-btn" id="today-btn" title="Go to today">Today</button>
+    </header>
+
+    <!-- ======================================================
+         MONTH NAVIGATION + LEGEND
+         ====================================================== -->
+    <section class="card" id="calendar-card">
+      <div class="month-nav">
+        <button class="nav-arrow" id="prev-month" aria-label="Previous month">‹</button>
+        <span class="month-label" id="month-label">April 2025</span>
+        <button class="nav-arrow" id="next-month" aria-label="Next month">›</button>
+      </div>
+
+      <!-- Calendar Grid -->
+      <div class="calendar-grid" id="calendar-grid">
+        <!-- Rendered by JS -->
+      </div>
+
+      <!-- Legend -->
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot present"></span> Present</span>
+        <span class="legend-item"><span class="legend-dot absent"></span> Absent</span>
+        <span class="legend-item"><span class="legend-dot annual"></span> Annual Leave</span>
+        <span class="legend-item"><span class="legend-dot medical"></span> Medical</span>
+        <span class="legend-item"><span class="legend-dot holiday"></span> Public Holiday</span>
+        <span class="legend-item"><span class="legend-dot unpaid"></span> Unpaid</span>
+        <span class="legend-item"><span class="legend-dot future"></span> Future</span>
+      </div>
+    </section>
+
+    <!-- ======================================================
+         QUICK FILTERS
+         ====================================================== -->
+    <section class="card" id="filters-card">
+      <div class="card-header">
+        <span class="card-title">🔍 Quick Filters</span>
+        <button class="filter-chip active" data-filter="all" id="filter-all">Show All <span class="chip-count" id="count-all"></span></button>
+      </div>
+      <div class="filter-chips" id="filter-chips">
+        <button class="filter-chip" data-filter="present">🟩 Present <span class="chip-count" id="count-present"></span></button>
+        <button class="filter-chip" data-filter="absent">🟥 Absent <span class="chip-count" id="count-absent"></span></button>
+        <button class="filter-chip" data-filter="leave">🏖️ Leave <span class="chip-count" id="count-leave"></span></button>
+        <button class="filter-chip" data-filter="holiday">🟪 Holiday <span class="chip-count" id="count-holiday"></span></button>
+      </div>
+    </section>
+
+    <!-- ======================================================
+         ATTENDANCE STATISTICS
+         ====================================================== -->
+    <section class="card" id="stats-card">
+      <div class="card-header">
+        <span class="card-title">📊 Attendance Statistics</span>
+        <span class="card-subtitle" id="stats-subtitle">April 2025</span>
+      </div>
+
+      <div class="attendance-rate-ring">
+        <div class="rate-circle">
+          <div class="rate-inner" id="rate-value">90%</div>
+        </div>
+        <div class="rate-info">
+          <span class="rate-label">Overall Attendance Rate</span>
+          <span class="rate-detail" id="rate-detail">14 of 16 working days present</span>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card present-stat">
+          <span class="stat-icon">✅</span>
+          <span class="stat-label">Present Days</span>
+          <span class="stat-value" id="stat-present">14</span>
+        </div>
+        <div class="stat-card absent-stat">
+          <span class="stat-icon">❌</span>
+          <span class="stat-label">Absent Days</span>
+          <span class="stat-value" id="stat-absent">1</span>
+        </div>
+        <div class="stat-card leave-stat">
+          <span class="stat-icon">🏖️</span>
+          <span class="stat-label">Leave Days</span>
+          <span class="stat-value" id="stat-leave">3</span>
+        </div>
+        <div class="stat-card rate-stat">
+          <span class="stat-icon">📈</span>
+          <span class="stat-label">On-Time %</span>
+          <span class="stat-value" id="stat-ontime">82%</span>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ==========================================================
+       BOTTOM NAVIGATION (mobile)
+       ========================================================== -->
+  <nav class="bottom-nav">
+    <a class="nav-item" href="#"><span class="nav-icon">◈</span> Home</a>
+    <a class="nav-item active" href="#"><span class="nav-icon">📅</span> Calendar</a>
+    <a class="nav-item" href="#"><span class="nav-icon">🌳</span> My Tree</a>
+    <a class="nav-item" href="#"><span class="nav-icon">🎁</span> Rewards</a>
+    <a class="nav-item" href="#"><span class="nav-icon">👤</span> Profile</a>
+  </nav>
+
+  <!-- ==========================================================
+       SCRIPTS
+       ========================================================== -->
+  <script>
+    /* ---- State ---- */
+    const realToday = new Date();
+    let viewYear = realToday.getFullYear();
+    let viewMonth = realToday.getMonth(); // 0-indexed
+    let activeFilter = 'all';
+
+    /* ---- Attendance data (April 2025) ---- */
+    const attendanceData = {
+      // April 2025
+      '2025-4-1': 'present',   '2025-4-2': 'present',   '2025-4-3': 'present',
+      '2025-4-4': 'present',   '2025-4-7': 'present',   '2025-4-8': 'present',
+      '2025-4-9': 'absent',    '2025-4-10': 'present',  '2025-4-11': 'present',
+      '2025-4-14': 'annual-leave', '2025-4-15': 'annual-leave',
+      '2025-4-16': 'present',
+      '2025-4-18': 'public-holiday',
+      '2025-4-21': 'medical-leave',
+      '2025-4-22': 'present',  '2025-4-23': 'present',  '2025-4-24': 'present',
+      '2025-4-25': 'present',
+      '2025-4-28': 'unpaid-leave', '2025-4-29': 'unpaid-leave',
+      '2025-4-30': 'present',
+      // May 2025 (some forward-looking data)
+      '2025-5-1': 'public-holiday',
+      '2025-5-2': 'future',
+      // March 2025 (some history)
+      '2025-3-3': 'present',   '2025-3-4': 'present',   '2025-3-5': 'present',
+      '2025-3-6': 'present',   '2025-3-7': 'present',
+      '2025-3-10': 'present',  '2025-3-11': 'present',
+      '2025-3-12': 'absent',   '2025-3-13': 'present',  '2025-3-14': 'present',
+      '2025-3-17': 'annual-leave', '2025-3-18': 'annual-leave', '2025-3-19': 'annual-leave',
+      '2025-3-20': 'present',  '2025-3-21': 'present',
+      '2025-3-24': 'present',  '2025-3-25': 'present',  '2025-3-26': 'present',
+      '2025-3-27': 'present',  '2025-3-28': 'present',
+      '2025-3-31': 'present',
+    };
+
+    /* ---- Status icon map ---- */
+    const statusIcons = {
+      'present': '✅',
+      'absent': '❌',
+      'annual-leave': '🏖️',
+      'medical-leave': '🏥',
+      'public-holiday': '🎌',
+      'unpaid-leave': '📅',
+      'future': '',
+    };
+    const statusLabels = {
+      'present': 'Present',
+      'absent': 'Absent',
+      'annual-leave': 'Annual Leave',
+      'medical-leave': 'Medical Leave',
+      'public-holiday': 'Public Holiday',
+      'unpaid-leave': 'Unpaid Leave',
+      'future': 'Future',
+    };
+
+    /* ---- DOM refs ---- */
+    const $ = (s) => document.querySelector(s);
+    const $$ = (s) => document.querySelectorAll(s);
+
+    /* ---- Render calendar ---- */
+    function renderCalendar() {
+      const monthNames = ['January','February','March','April','May','June',
+                          'July','August','September','October','November','December'];
+      $('#month-label').textContent = `${monthNames[viewMonth]} ${viewYear}`;
+      $('#stats-subtitle').textContent = `${monthNames[viewMonth]} ${viewYear}`;
+
+      const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+      const firstDayOfWeek = new Date(viewYear, viewMonth, 1).getDay();
+      const daysInPrevMonth = new Date(viewYear, viewMonth, 0).getDate();
+
+      const dayHeaders = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      let html = dayHeaders.map((d, i) => {
+        const isWeekend = i === 0 || i === 6;
+        return `<div class="cal-day-header${isWeekend ? ' weekend' : ''}">${d}</div>`;
+      }).join('');
+
+      const todayKey = `${realToday.getFullYear()}-${realToday.getMonth() + 1}-${realToday.getDate()}`;
+
+      let totalPresent = 0, totalAbsent = 0, totalLeave = 0, totalHoliday = 0;
+      let totalTracked = 0;
+
+      // Previous month cells
+      for (let i = firstDayOfWeek - 1; i >= 0; i--) {
+        html += `<div class="cal-cell other-month"></div>`;
+      }
+
+      // Current month cells
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateKey = `${viewYear}-${viewMonth + 1}-${d}`;
+        const isToday = dateKey === todayKey;
+        let status = attendanceData[dateKey] || '';
+
+        // If no data and date is in the future, mark as future
+        const cellDate = new Date(viewYear, viewMonth, d);
+        if (!status && cellDate > realToday) {
+          status = 'future';
+        }
+        // If no data and date is in the past, treat as absent by default for demo
+        // (in production this would be pulled from actual records)
+        if (!status && cellDate <= realToday) {
+          // Leave blank for weekends / non-working days? For demo we leave untracked
+          status = '';
+        }
+
+        let cellClass = 'cal-cell';
+        if (isToday) cellClass += ' today';
+        if (status) cellClass += ' ' + status;
+        if (activeFilter !== 'all') {
+          const visible = statusMatchesFilter(status, activeFilter);
+          if (!visible) cellClass += ' filtered-out';
+        }
+
+        const icon = statusIcons[status] || '';
+        const label = statusLabels[status] || '';
+        const tooltip = label ? `data-tooltip="${label}"` : '';
+
+        html += `<div class="${cellClass}" ${tooltip} tabindex="0" role="button" aria-label="${d} ${label}">
+          <span class="day-num">${d}</span>
+          ${icon ? `<span class="day-icon">${icon}</span>` : ''}
+          ${status && status !== 'future' ? `<span class="status-dot"></span>` : ''}
+        </div>`;
+
+        // Count for stats
+        if (status === 'present') { totalPresent++; totalTracked++; }
+        else if (status === 'absent') { totalAbsent++; totalTracked++; }
+        else if (status === 'annual-leave' || status === 'medical-leave' || status === 'unpaid-leave') { totalLeave++; }
+        else if (status === 'public-holiday') { totalHoliday++; }
+      }
+
+      // Next month cells (fill remaining grid)
+      const totalCells = firstDayOfWeek + daysInMonth;
+      const remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+      for (let d = 1; d <= remaining; d++) {
+        html += `<div class="cal-cell other-month"></div>`;
+      }
+
+      $('#calendar-grid').innerHTML = html;
+
+      // Update stats
+      $('#stat-present').textContent = totalPresent;
+      $('#stat-absent').textContent = totalAbsent;
+      $('#stat-leave').textContent = totalLeave;
+      const rate = totalTracked > 0 ? Math.round((totalPresent / totalTracked) * 100) : 0;
+      $('#rate-value').textContent = rate + '%';
+      $('#rate-detail').textContent = `${totalPresent} of ${totalTracked} working days present`;
+      // Estimate on-time % (slightly less than present)
+      const onTime = Math.round(rate * 0.91);
+      $('#stat-ontime').textContent = onTime + '%';
+
+      // Update rate ring
+      const ringAngle = (rate / 100) * 360;
+      const rateCircle = document.querySelector('.rate-circle');
+      if (rateCircle) {
+        rateCircle.style.background = `conic-gradient(var(--accent) 0deg ${ringAngle}deg, oklch(90% 0.006 250) ${ringAngle}deg 360deg)`;
+      }
+
+      // Update filter counts
+      const leaveTypes = ['annual-leave', 'medical-leave', 'unpaid-leave'];
+      const allCells = $$('.cal-cell:not(.other-month)');
+      let countPresent = 0, countAbsent = 0, countLeave = 0, countHoliday = 0;
+      allCells.forEach(c => {
+        if (c.classList.contains('present')) countPresent++;
+        if (c.classList.contains('absent')) countAbsent++;
+        if (leaveTypes.some(lt => c.classList.contains(lt))) countLeave++;
+        if (c.classList.contains('public-holiday')) countHoliday++;
+      });
+      $('#count-all').textContent = `(${countPresent + countAbsent + countLeave + countHoliday})`;
+      $('#count-present').textContent = `(${countPresent})`;
+      $('#count-absent').textContent = `(${countAbsent})`;
+      $('#count-leave').textContent = `(${countLeave})`;
+      $('#count-holiday').textContent = `(${countHoliday})`;
+    }
+
+    function statusMatchesFilter(status, filter) {
+      if (!status || status === 'future') return filter === 'all';
+      switch (filter) {
+        case 'present': return status === 'present';
+        case 'absent': return status === 'absent';
+        case 'leave': return ['annual-leave', 'medical-leave', 'unpaid-leave'].includes(status);
+        case 'holiday': return status === 'public-holiday';
+        default: return true;
+      }
+    }
+
+    /* ---- Navigation ---- */
+    $('#prev-month').addEventListener('click', () => {
+      if (viewMonth === 0) { viewMonth = 11; viewYear--; }
+      else viewMonth--;
+      renderCalendar();
+    });
+    $('#next-month').addEventListener('click', () => {
+      if (viewMonth === 11) { viewMonth = 0; viewYear++; }
+      else viewMonth++;
+      renderCalendar();
+    });
+    $('#today-btn').addEventListener('click', () => {
+      viewMonth = realToday.getMonth();
+      viewYear = realToday.getFullYear();
+      renderCalendar();
+    });
+
+    /* ---- Filter chips ---- */
+    $$('.filter-chip[data-filter]').forEach(chip => {
+      chip.addEventListener('click', function() {
+        const filter = this.dataset.filter;
+        activeFilter = filter;
+        $$('.filter-chip[data-filter]').forEach(c => c.classList.remove('active'));
+        this.classList.add('active');
+        renderCalendar();
+      });
+    });
+
+    /* ---- Keyboard navigation ---- */
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'ArrowLeft' && e.altKey) {
+        e.preventDefault();
+        $('#prev-month').click();
+      } else if (e.key === 'ArrowRight' && e.altKey) {
+        e.preventDefault();
+        $('#next-month').click();
+      } else if (e.key === 't' && e.altKey) {
+        e.preventDefault();
+        $('#today-btn').click();
+      }
+    });
+
+    /* ---- Bottom nav ---- */
+    $$('.bottom-nav .nav-item').forEach(item => {
+      item.addEventListener('click', function(e) {
+        $$('.bottom-nav .nav-item').forEach(i => i.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+
+    /* ---- Init ---- */
+    renderCalendar();
+
+    console.log('📅 LeafPoint Attendance Calendar ready.');
+    console.log('💡 Tip: Use Alt+← → to navigate months, Alt+T for today.');
+  </script>
+</body>
+</html>

@@ -1,0 +1,1170 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Leave Approvals — LeafPoint Admin</title>
+  <style>
+    /* ============================================================
+       DESIGN TOKENS — LeafPoint System
+       ============================================================ */
+    :root {
+      --bg: oklch(96.5% 0.006 245);
+      --bg-gradient: radial-gradient(ellipse at 70% 0%, oklch(90% 0.04 170 / 0.18), oklch(97% 0.004 245) 55%);
+      --surface-glass: rgba(255, 255, 255, 0.52);
+      --surface-glass-hover: rgba(255, 255, 255, 0.72);
+      --surface-solid: #ffffff;
+      --surface-raised: rgba(255, 255, 255, 0.85);
+      --fg: oklch(16% 0.018 252);
+      --fg-secondary: oklch(36% 0.022 250);
+      --muted: oklch(53% 0.016 250);
+      --border-glass: rgba(255, 255, 255, 0.38);
+      --border-subtle: rgba(0, 0, 0, 0.055);
+
+      --accent: oklch(56% 0.19 148);
+      --accent-soft: oklch(74% 0.14 148);
+      --accent-dark: oklch(48% 0.16 148);
+      --accent-glow: oklch(62% 0.21 148 / 0.3);
+      --gold: oklch(70% 0.19 82);
+
+      --green-status: oklch(58% 0.17 142);
+      --yellow-status: oklch(68% 0.15 85);
+      --red-status: oklch(53% 0.22 22);
+      --blue-info: oklch(56% 0.16 255);
+      --purple-accent: oklch(53% 0.18 310);
+
+      --radius-sm: 10px;
+      --radius-md: 16px;
+      --radius-lg: 22px;
+      --radius-xl: 28px;
+      --shadow-card: 0 2px 16px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.03);
+      --shadow-card-hover: 0 6px 28px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.04);
+      --shadow-modal: 0 20px 60px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.06);
+      --shadow-drawer: -8px 0 40px rgba(0,0,0,0.12);
+
+      --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+      --font-mono: 'SF Mono', ui-monospace, 'JetBrains Mono', Menlo, monospace;
+
+      --drawer-width: 420px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; min-height: 100%;
+      font-family: var(--font-body);
+      color: var(--fg);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ---- Page shell (mobile-first) ---- */
+    .page {
+      max-width: 100%;
+      margin: 0 auto;
+      padding: 0 16px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-height: 100vh;
+    }
+
+    /* ---- Top bar (admin) ---- */
+    .topbar {
+      position: sticky; top: 0; z-index: 25;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 0 10px;
+      background: oklch(96.5% 0.006 245 / 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .topbar .topbar-left {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .topbar .back-btn {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--surface-glass); border: 1px solid var(--border-subtle);
+      display: grid; place-items: center; font-size: 18px;
+      cursor: pointer; transition: background 0.15s; color: var(--fg);
+      text-decoration: none; flex-shrink: 0;
+    }
+    .topbar .back-btn:hover { background: var(--surface-glass-hover); }
+    .topbar .title {
+      font-family: var(--font-display); font-size: 18px; font-weight: 700;
+      letter-spacing: -0.02em; white-space: nowrap;
+    }
+    .topbar .admin-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 12px; border-radius: 999px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.02em;
+      background: oklch(92% 0.04 310); color: oklch(38% 0.1 310);
+      white-space: nowrap;
+    }
+    .topbar .notif-badge {
+      position: relative;
+      padding: 6px 14px; border-radius: 999px;
+      background: var(--surface-glass); border: 1px solid var(--border-subtle);
+      font-size: 12px; font-weight: 700; cursor: pointer;
+      transition: all 0.15s; white-space: nowrap;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .topbar .notif-badge:hover { background: var(--surface-glass-hover); }
+    .notif-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--red-status);
+      animation: pulse-dot 1.4s ease-in-out infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.4); }
+    }
+
+    /* ---- Glass card ---- */
+    .card {
+      background: var(--surface-glass);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      padding: 18px;
+      display: flex; flex-direction: column; gap: 14px;
+      transition: box-shadow 0.2s, background 0.2s;
+    }
+    .card:hover { background: var(--surface-glass-hover); box-shadow: var(--shadow-card-hover); }
+    .card-header {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      flex-wrap: wrap;
+    }
+    .card-title {
+      font-family: var(--font-display); font-size: 15px; font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+    .card-subtitle { font-size: 11px; color: var(--muted); }
+
+    /* ============================================================
+       STATS GRID — 4 Summary Cards
+       ============================================================ */
+    .stats-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    }
+    .stat-card {
+      background: var(--surface-glass);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-card);
+      padding: 16px 14px;
+      display: flex; flex-direction: column; gap: 8px;
+      transition: all 0.2s; cursor: default;
+      position: relative; overflow: hidden;
+    }
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-card-hover);
+      background: var(--surface-glass-hover);
+    }
+    .stat-card::after {
+      content: '';
+      position: absolute; top: -18px; right: -18px;
+      width: 60px; height: 60px; border-radius: 50%;
+      opacity: 0.1; pointer-events: none;
+    }
+    .stat-card.pending::after { background: var(--yellow-status); }
+    .stat-card.approved::after { background: var(--green-status); }
+    .stat-card.rejected::after { background: var(--red-status); }
+    .stat-card.on-leave::after { background: var(--blue-info); }
+    .stat-card .sc-icon { font-size: 22px; line-height: 1; }
+    .stat-card .sc-label {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em;
+      color: var(--muted); font-weight: 700;
+    }
+    .stat-card .sc-value {
+      font-family: var(--font-display); font-size: 30px; font-weight: 800;
+      letter-spacing: -0.02em; line-height: 1;
+    }
+    .stat-card.pending .sc-value { color: var(--yellow-status); }
+    .stat-card.approved .sc-value { color: var(--green-status); }
+    .stat-card.rejected .sc-value { color: var(--red-status); }
+    .stat-card.on-leave .sc-value { color: var(--blue-info); }
+
+    /* ============================================================
+       TABLE
+       ============================================================ */
+    .table-wrap {
+      overflow-x: auto; -webkit-overflow-scrolling: touch;
+      margin: -4px -4px 0; padding: 4px;
+    }
+    .table-wrap::-webkit-scrollbar { height: 4px; }
+    .table-wrap::-webkit-scrollbar-track { background: transparent; }
+    .table-wrap::-webkit-scrollbar-thumb { background: oklch(84% 0.005 250); border-radius: 2px; }
+
+    table.data-table {
+      width: 100%; border-collapse: collapse;
+      font-size: 13px; min-width: 820px;
+    }
+    table.data-table thead th {
+      text-align: left; padding: 11px 12px;
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--muted); font-weight: 700;
+      border-bottom: 1px solid var(--border-subtle);
+      white-space: nowrap; background: oklch(98% 0.002 250 / 0.4);
+      position: sticky; top: 0;
+    }
+    table.data-table tbody td {
+      padding: 12px;
+      border-bottom: 1px solid oklch(94% 0.003 250);
+      white-space: nowrap;
+    }
+    table.data-table tbody tr {
+      transition: background 0.15s; cursor: pointer;
+    }
+    table.data-table tbody tr:hover { background: rgba(0,0,0,0.025); }
+    table.data-table tbody tr:last-child td { border-bottom: none; }
+    table.data-table tbody tr.processed { opacity: 0.6; pointer-events: none; }
+
+    .employee-cell {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .employee-cell .emp-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: grid; place-items: center; font-size: 14px; font-weight: 700;
+      color: #fff; flex-shrink: 0;
+    }
+    .employee-cell .emp-name { font-weight: 600; color: var(--fg); }
+    .employee-cell .emp-dept { font-size: 10px; color: var(--muted); display: block; }
+
+    .leave-type-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 10px; border-radius: 999px;
+      font-size: 11px; font-weight: 600;
+    }
+    .leave-type-badge.annual { background: oklch(90% 0.05 255); color: oklch(38% 0.08 255); }
+    .leave-type-badge.medical { background: oklch(92% 0.06 88); color: oklch(42% 0.1 88); }
+    .leave-type-badge.unpaid { background: oklch(90% 0.004 250); color: oklch(45% 0.005 250); }
+
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 12px; border-radius: 999px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.01em;
+    }
+    .status-badge.pending { background: oklch(94% 0.06 85); color: oklch(42% 0.12 80); }
+    .status-badge.approved { background: oklch(92% 0.06 148); color: oklch(36% 0.1 148); }
+    .status-badge.rejected { background: oklch(92% 0.04 22); color: oklch(40% 0.12 22); }
+    .status-dot {
+      width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+    }
+    .status-dot.pending { background: var(--yellow-status); animation: pulse-dot 1.6s ease-in-out infinite; }
+    .status-dot.approved { background: var(--green-status); }
+    .status-dot.rejected { background: var(--red-status); }
+
+    .action-btns { display: flex; gap: 6px; }
+    .btn-sm {
+      padding: 6px 14px; border-radius: 999px;
+      border: none; font-size: 11px; font-weight: 700;
+      cursor: pointer; transition: all 0.2s;
+      font-family: var(--font-body); letter-spacing: -0.01em;
+    }
+    .btn-sm-approve {
+      background: oklch(90% 0.06 148); color: oklch(36% 0.1 148);
+    }
+    .btn-sm-approve:hover { background: var(--green-status); color: #fff; }
+    .btn-sm-reject {
+      background: oklch(92% 0.03 22); color: oklch(40% 0.1 22);
+    }
+    .btn-sm-reject:hover { background: var(--red-status); color: #fff; }
+
+    /* ============================================================
+       TAB SWITCHER (Pending / History)
+       ============================================================ */
+    .tab-switcher {
+      display: flex; gap: 4px; background: oklch(93% 0.004 250);
+      padding: 4px; border-radius: 999px;
+    }
+    .tab-btn {
+      padding: 9px 20px; border-radius: 999px;
+      border: none; background: transparent; color: var(--fg-secondary);
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: all 0.2s; font-family: var(--font-body);
+      letter-spacing: -0.01em; white-space: nowrap;
+    }
+    .tab-btn.active {
+      background: var(--surface-solid); color: var(--fg);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+    .tab-btn .tab-count {
+      font-size: 10px; margin-left: 4px; opacity: 0.6;
+    }
+
+    /* ---- Search + Filter row ---- */
+    .search-filter-row {
+      display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+    }
+    .search-input {
+      flex: 1; min-width: 160px; padding: 9px 14px;
+      border: 1.5px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-body); font-size: 13px; color: var(--fg);
+      background: var(--surface-solid); outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px oklch(56% 0.19 148 / 0.1);
+    }
+    .filter-select {
+      padding: 9px 32px 9px 12px;
+      border: 1.5px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-body); font-size: 13px; color: var(--fg);
+      background: var(--surface-solid);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1.5l5 5 5-5' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center;
+      -webkit-appearance: none; appearance: none; outline: none;
+      cursor: pointer; transition: border-color 0.2s;
+    }
+    .filter-select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px oklch(56% 0.19 148 / 0.1);
+    }
+
+    /* ============================================================
+       DETAIL DRAWER
+       ============================================================ */
+    .drawer-overlay {
+      position: fixed; inset: 0; z-index: 45;
+      background: rgba(0,0,0,0.35);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    .drawer-overlay.open { opacity: 1; pointer-events: auto; }
+    .drawer {
+      position: fixed; top: 0; right: 0; bottom: 0; z-index: 46;
+      width: min(var(--drawer-width), 100vw);
+      background: var(--surface-raised);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      box-shadow: var(--shadow-drawer);
+      transform: translateX(100%);
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex; flex-direction: column;
+      overflow-y: auto;
+    }
+    .drawer.open { transform: translateX(0); }
+    .drawer-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 20px; border-bottom: 1px solid var(--border-subtle);
+      position: sticky; top: 0; background: var(--surface-raised); z-index: 2;
+    }
+    .drawer-header .drawer-title {
+      font-family: var(--font-display); font-size: 17px; font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+    .drawer-close {
+      width: 34px; height: 34px; border-radius: 50%;
+      border: 1px solid var(--border-subtle); background: var(--surface-solid);
+      display: grid; place-items: center; font-size: 18px; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .drawer-close:hover { background: oklch(95% 0.005 250); }
+    .drawer-body {
+      padding: 20px; display: flex; flex-direction: column; gap: 18px;
+      flex: 1;
+    }
+    .drawer-section {
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .drawer-section .ds-title {
+      font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--muted); font-weight: 700;
+    }
+    .drawer-info-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 0; border-bottom: 1px solid oklch(94% 0.003 250);
+    }
+    .drawer-info-row .di-label { font-size: 12px; color: var(--muted); }
+    .drawer-info-row .di-value { font-size: 13px; font-weight: 600; color: var(--fg); text-align: right; }
+
+    .drawer-emp-card {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px; border-radius: var(--radius-sm);
+      background: rgba(0,0,0,0.025);
+    }
+    .drawer-emp-card .dec-avatar {
+      width: 44px; height: 44px; border-radius: 50%;
+      display: grid; place-items: center; font-size: 18px; font-weight: 700;
+      color: #fff; flex-shrink: 0;
+    }
+    .drawer-emp-card .dec-info { flex: 1; }
+    .drawer-emp-card .dec-name { font-size: 15px; font-weight: 700; }
+    .drawer-emp-card .dec-email { font-size: 11px; color: var(--muted); }
+    .drawer-emp-card .dec-dept { font-size: 11px; color: var(--muted); }
+
+    .balance-row {
+      display: flex; gap: 10px;
+    }
+    .balance-chip {
+      flex: 1; padding: 10px 12px; border-radius: var(--radius-sm);
+      background: rgba(0,0,0,0.018); text-align: center;
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .balance-chip .bc-type { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 600; }
+    .balance-chip .bc-days { font-family: var(--font-display); font-size: 24px; font-weight: 700; }
+    .balance-chip.annual .bc-days { color: var(--blue-info); }
+    .balance-chip.medical .bc-days { color: var(--yellow-status); }
+
+    .drawer-actions {
+      display: flex; gap: 10px; padding-top: 8px;
+    }
+    .btn-approve, .btn-reject {
+      flex: 1; padding: 13px; border-radius: var(--radius-sm);
+      border: none; font-family: var(--font-body); font-size: 14px;
+      font-weight: 700; cursor: pointer; transition: all 0.2s;
+      letter-spacing: -0.01em;
+    }
+    .btn-approve {
+      background: var(--green-status); color: #fff;
+      box-shadow: 0 4px 16px oklch(58% 0.17 142 / 0.3);
+    }
+    .btn-approve:hover { background: oklch(50% 0.15 142); box-shadow: 0 6px 22px oklch(58% 0.17 142 / 0.4); }
+    .btn-reject {
+      background: var(--surface-solid); color: var(--red-status);
+      border: 1.5px solid oklch(82% 0.06 22);
+    }
+    .btn-reject:hover { background: oklch(95% 0.02 22); border-color: var(--red-status); }
+
+    /* Rejection reason */
+    .rejection-section {
+      display: flex; flex-direction: column; gap: 8px;
+      padding: 12px; border-radius: var(--radius-sm);
+      background: oklch(95% 0.02 22 / 0.4);
+      border: 1px solid oklch(85% 0.04 22 / 0.4);
+    }
+    .rejection-section .rj-label {
+      font-size: 12px; font-weight: 700; color: var(--red-status);
+    }
+    .rejection-section textarea {
+      width: 100%; min-height: 80px; padding: 10px 12px;
+      border: 1.5px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-body); font-size: 13px; color: var(--fg);
+      background: var(--surface-solid); resize: vertical; outline: none;
+    }
+    .rejection-section textarea:focus {
+      border-color: var(--red-status);
+      box-shadow: 0 0 0 3px oklch(53% 0.22 22 / 0.08);
+    }
+    .rejection-section .rj-error {
+      font-size: 10px; color: var(--red-status); font-weight: 600; display: none;
+    }
+
+    /* ============================================================
+       CONFIRMATION MODAL
+       ============================================================ */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 55;
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.25s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: auto; }
+    .modal-dialog {
+      background: var(--surface-solid);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-modal);
+      padding: 28px 24px 20px;
+      max-width: 400px; width: 100%;
+      text-align: center;
+      display: flex; flex-direction: column; gap: 14px;
+      transform: translateY(20px) scale(0.96);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .modal-overlay.open .modal-dialog {
+      transform: translateY(0) scale(1);
+    }
+    .modal-dialog .modal-icon { font-size: 48px; }
+    .modal-dialog .modal-title {
+      font-family: var(--font-display); font-size: 18px; font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .modal-dialog .modal-desc {
+      font-size: 13px; color: var(--fg-secondary); line-height: 1.5;
+    }
+    .modal-actions {
+      display: flex; gap: 10px;
+    }
+    .modal-actions .btn {
+      flex: 1; padding: 12px; border-radius: var(--radius-sm);
+      font-family: var(--font-body); font-size: 14px; font-weight: 700;
+      cursor: pointer; transition: all 0.2s; border: none;
+      letter-spacing: -0.01em;
+    }
+    .btn-modal-cancel {
+      background: oklch(92% 0.006 250); color: var(--fg-secondary);
+    }
+    .btn-modal-cancel:hover { background: oklch(87% 0.006 250); }
+    .btn-modal-confirm.approve-action {
+      background: var(--green-status); color: #fff;
+      box-shadow: 0 4px 16px oklch(58% 0.17 142 / 0.3);
+    }
+    .btn-modal-confirm.approve-action:hover { background: oklch(50% 0.15 142); }
+    .btn-modal-confirm.reject-action {
+      background: var(--red-status); color: #fff;
+      box-shadow: 0 4px 16px oklch(53% 0.22 22 / 0.25);
+    }
+    .btn-modal-confirm.reject-action:hover { background: oklch(46% 0.2 22); }
+
+    /* ---- Toast ---- */
+    .toast {
+      position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-120px);
+      background: var(--surface-solid); border: 1px solid var(--green-status);
+      border-radius: var(--radius-md); padding: 14px 20px;
+      font-weight: 600; font-size: 14px; color: var(--fg);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+      z-index: 100; display: flex; align-items: center; gap: 8px;
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.warning { border-color: var(--red-status); }
+
+    /* ---- Keyframes ---- */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .row-animate { animation: fadeInUp 0.3s ease; }
+
+    /* ============================================================
+       RESPONSIVE — Tablet (640px+)
+       ============================================================ */
+    @media (min-width: 640px) {
+      .page { padding: 0 20px 32px; }
+      .topbar { padding: 16px 0 12px; }
+      .topbar .title { font-size: 20px; }
+      .stats-grid { grid-template-columns: repeat(4, 1fr); gap: 12px; }
+      .stat-card .sc-value { font-size: 34px; }
+      .card { padding: 20px 22px; }
+      table.data-table { font-size: 13px; min-width: 720px; }
+    }
+
+    /* ============================================================
+       RESPONSIVE — Desktop (1024px+)
+       ============================================================ */
+    @media (min-width: 1024px) {
+      .page { max-width: 1200px; padding: 0 32px 48px; gap: 22px; }
+      .card { padding: 24px 28px; }
+      .card-title { font-size: 17px; }
+      .stats-grid { gap: 16px; }
+      .stat-card { padding: 20px 18px; }
+      .stat-card .sc-value { font-size: 38px; }
+      table.data-table { font-size: 14px; }
+      table.data-table thead th { font-size: 11px; }
+    }
+
+    /* ---- Reduced motion ---- */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    /* ---- Focus ---- */
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+      outline: 2px solid var(--accent); outline-offset: 2px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==========================================================
+       TOAST
+       ========================================================== -->
+  <div class="toast" id="toast">
+    <span id="toast-icon">✅</span>
+    <span id="toast-msg">Action completed.</span>
+  </div>
+
+  <!-- ==========================================================
+       CONFIRMATION MODAL
+       ========================================================== -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal-dialog" id="modal-dialog">
+      <span class="modal-icon" id="modal-icon">⚠️</span>
+      <div class="modal-title" id="modal-title">Confirm Action</div>
+      <div class="modal-desc" id="modal-desc">Are you sure?</div>
+      <div class="modal-actions">
+        <button class="btn btn-modal-cancel" id="btn-modal-cancel">Cancel</button>
+        <button class="btn btn-modal-confirm" id="btn-modal-confirm">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================
+       DETAIL DRAWER
+       ========================================================== -->
+  <div class="drawer-overlay" id="drawer-overlay"></div>
+  <aside class="drawer" id="drawer">
+    <div class="drawer-header">
+      <span class="drawer-title">📋 Leave Request Detail</span>
+      <button class="drawer-close" id="drawer-close" aria-label="Close drawer">✕</button>
+    </div>
+    <div class="drawer-body" id="drawer-body">
+      <!-- Populated by JS -->
+    </div>
+  </aside>
+
+  <!-- ==========================================================
+       PAGE
+       ========================================================== -->
+  <div class="page">
+
+    <!-- Top bar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <a class="back-btn" href="#" aria-label="Back" onclick="history.back();return false;">←</a>
+        <span class="title">📋 Leave Approvals</span>
+        <span class="admin-badge">👑 Admin</span>
+      </div>
+      <div class="notif-badge" id="notif-badge">
+        <span class="notif-dot"></span>
+        <span id="notif-text">8 Pending</span>
+      </div>
+    </header>
+
+    <!-- ======================================================
+         SECTION 1 — SUMMARY STATS
+         ====================================================== -->
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat-card pending">
+        <span class="sc-icon">⏳</span>
+        <span class="sc-label">Pending Requests</span>
+        <span class="sc-value" id="stat-pending">8</span>
+      </div>
+      <div class="stat-card approved">
+        <span class="sc-icon">✅</span>
+        <span class="sc-label">Approved This Month</span>
+        <span class="sc-value" id="stat-approved">23</span>
+      </div>
+      <div class="stat-card rejected">
+        <span class="sc-icon">❌</span>
+        <span class="sc-label">Rejected This Month</span>
+        <span class="sc-value" id="stat-rejected">4</span>
+      </div>
+      <div class="stat-card on-leave">
+        <span class="sc-icon">🏖️</span>
+        <span class="sc-label">On Leave Today</span>
+        <span class="sc-value" id="stat-onleave">3</span>
+      </div>
+    </div>
+
+    <!-- ======================================================
+         SECTION 2 + 6 — TAB SWITCHER + TABLE
+         ====================================================== -->
+    <section class="card" id="table-card">
+      <div class="card-header">
+        <div class="tab-switcher" id="tab-switcher">
+          <button class="tab-btn active" data-tab="pending">Pending <span class="tab-count" id="tab-count-pending">(8)</span></button>
+          <button class="tab-btn" data-tab="approved">Approved <span class="tab-count" id="tab-count-approved">(23)</span></button>
+          <button class="tab-btn" data-tab="rejected">Rejected <span class="tab-count" id="tab-count-rejected">(4)</span></button>
+        </div>
+      </div>
+
+      <!-- Search & Filter -->
+      <div class="search-filter-row" id="search-filter-row">
+        <input type="text" class="search-input" id="search-input" placeholder="🔍 Search by employee name…" />
+        <select class="filter-select" id="filter-type">
+          <option value="all">All Types</option>
+          <option value="annual">Annual Leave</option>
+          <option value="medical">Medical Leave</option>
+          <option value="unpaid">Unpaid Leave</option>
+        </select>
+      </div>
+
+      <!-- Table -->
+      <div class="table-wrap">
+        <table class="data-table" id="data-table">
+          <thead id="table-head">
+            <tr>
+              <th>Employee</th>
+              <th>Type</th>
+              <th>Start</th>
+              <th>End</th>
+              <th>Days</th>
+              <th>Reason</th>
+              <th>Applied</th>
+              <th>Status</th>
+              <th id="th-actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="table-body">
+            <!-- Rendered by JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ==========================================================
+       SCRIPTS
+       ========================================================== -->
+  <script>
+    /* ---- Employee leave request data ---- */
+    const employeeColors = [
+      '#4A90D9', '#E8734A', '#50B86C', '#9B59B6', '#F1C40F', '#1ABC9C',
+      '#E74C3C', '#3498DB', '#2ECC71', '#E67E22', '#8E44AD', '#16A085',
+      '#D35400', '#2980B9', '#27AE60',
+    ];
+
+    const requests = [
+      { id: 1, name: 'Sarah Johnson', email: 'sarah.j@leafpoint.com', dept: 'Engineering', avatarBg: employeeColors[0], type: 'annual', start: '2025-04-22', end: '2025-04-24', reason: 'Vacation', customReason: 'Family trip to Bali', applied: '2025-04-10', status: 'pending', annualLeft: 12, medicalLeft: 8 },
+      { id: 2, name: 'Marcus Lee', email: 'marcus.l@leafpoint.com', dept: 'Design', avatarBg: employeeColors[1], type: 'medical', start: '2025-04-21', end: '2025-04-21', reason: 'Medical Appointment', customReason: 'Dental surgery follow-up', applied: '2025-04-14', status: 'pending', annualLeft: 8, medicalLeft: 5 },
+      { id: 3, name: 'Priya Patel', email: 'priya.p@leafpoint.com', dept: 'Product', avatarBg: employeeColors[2], type: 'annual', start: '2025-04-28', end: '2025-04-30', reason: 'Vacation', customReason: '', applied: '2025-04-12', status: 'pending', annualLeft: 15, medicalLeft: 10 },
+      { id: 4, name: 'James Wilson', email: 'james.w@leafpoint.com', dept: 'Engineering', avatarBg: employeeColors[3], type: 'unpaid', start: '2025-04-25', end: '2025-04-29', reason: 'Family Event', customReason: 'Brother\'s wedding overseas', applied: '2025-04-08', status: 'pending', annualLeft: 3, medicalLeft: 8 },
+      { id: 5, name: 'Elena Rodriguez', email: 'elena.r@leafpoint.com', dept: 'Marketing', avatarBg: employeeColors[4], type: 'annual', start: '2025-05-02', end: '2025-05-05', reason: 'Vacation', customReason: '', applied: '2025-04-15', status: 'pending', annualLeft: 10, medicalLeft: 7 },
+      { id: 6, name: 'David Kim', email: 'david.k@leafpoint.com', dept: 'Engineering', avatarBg: employeeColors[5], type: 'medical', start: '2025-04-18', end: '2025-04-19', reason: 'Emergency', customReason: 'Sprained ankle — doctor\'s note attached', applied: '2025-04-17', status: 'pending', annualLeft: 6, medicalLeft: 3 },
+      { id: 7, name: 'Aisha Mohammed', email: 'aisha.m@leafpoint.com', dept: 'HR', avatarBg: employeeColors[6], type: 'annual', start: '2025-05-10', end: '2025-05-16', reason: 'Vacation', customReason: 'Annual family holiday', applied: '2025-04-05', status: 'pending', annualLeft: 18, medicalLeft: 10 },
+      { id: 8, name: 'Tom Baker', email: 'tom.b@leafpoint.com', dept: 'Sales', avatarBg: employeeColors[7], type: 'unpaid', start: '2025-04-20', end: '2025-04-20', reason: 'Others', customReason: 'Personal errand', applied: '2025-04-16', status: 'pending', annualLeft: 5, medicalLeft: 6 },
+      // Approved history
+      { id: 9, name: 'Lisa Chen', email: 'lisa.c@leafpoint.com', dept: 'Design', avatarBg: employeeColors[8], type: 'annual', start: '2025-04-14', end: '2025-04-15', reason: 'Vacation', customReason: '', applied: '2025-04-01', status: 'approved', annualLeft: 10, medicalLeft: 8 },
+      { id: 10, name: 'Raj Kapoor', email: 'raj.k@leafpoint.com', dept: 'Engineering', avatarBg: employeeColors[9], type: 'medical', start: '2025-04-08', end: '2025-04-08', reason: 'Medical Appointment', customReason: 'Annual checkup', applied: '2025-03-28', status: 'approved', annualLeft: 14, medicalLeft: 6 },
+      { id: 11, name: 'Yuki Tanaka', email: 'yuki.t@leafpoint.com', dept: 'Product', avatarBg: employeeColors[10], type: 'annual', start: '2025-03-24', end: '2025-03-28', reason: 'Vacation', customReason: 'Cherry blossom trip', applied: '2025-03-10', status: 'approved', annualLeft: 8, medicalLeft: 10 },
+      { id: 12, name: 'Omar Hassan', email: 'omar.h@leafpoint.com', dept: 'Sales', avatarBg: employeeColors[11], type: 'annual', start: '2025-03-17', end: '2025-03-18', reason: 'Family Event', customReason: 'Sister\'s graduation', applied: '2025-03-05', status: 'approved', annualLeft: 15, medicalLeft: 8 },
+      // Rejected history
+      { id: 13, name: 'Nina Williams', email: 'nina.w@leafpoint.com', dept: 'Marketing', avatarBg: employeeColors[12], type: 'annual', start: '2025-03-10', end: '2025-03-12', reason: 'Vacation', customReason: '', applied: '2025-03-01', status: 'rejected', rejectReason: 'Team deadline — reschedule to following week', annualLeft: 12, medicalLeft: 8 },
+      { id: 14, name: 'Carlos Mendez', email: 'carlos.m@leafpoint.com', dept: 'Engineering', avatarBg: employeeColors[13], type: 'annual', start: '2025-03-03', end: '2025-03-05', reason: 'Vacation', customReason: '', applied: '2025-02-20', status: 'rejected', rejectReason: 'Sprint planning week — all hands required', annualLeft: 7, medicalLeft: 10 },
+      { id: 15, name: 'Anna Schmidt', email: 'anna.s@leafpoint.com', dept: 'HR', avatarBg: employeeColors[14], type: 'unpaid', start: '2025-02-20', end: '2025-02-21', reason: 'Others', customReason: 'Personal reasons', applied: '2025-02-10', status: 'rejected', rejectReason: 'Unpaid leave policy requires 2-week notice', annualLeft: 5, medicalLeft: 4 },
+    ];
+
+    /* ---- App State ---- */
+    const state = {
+      activeTab: 'pending',
+      searchQuery: '',
+      filterType: 'all',
+      drawerRequest: null,
+      modalAction: null, // 'approve' | 'reject'
+      modalRequestId: null,
+      rejectionReason: '',
+    };
+
+    /* ---- DOM refs ---- */
+    const $ = (s) => document.querySelector(s);
+    const $$ = (s) => document.querySelectorAll(s);
+    const tableBody = $('#table-body');
+    const tableHead = $('#table-head');
+    const drawer = $('#drawer');
+    const drawerOverlay = $('#drawer-overlay');
+    const drawerBody = $('#drawer-body');
+    const modalOverlay = $('#modal-overlay');
+    const toast = $('#toast');
+    const notifText = $('#notif-text');
+    const notifBadge = $('#notif-badge');
+    const searchInput = $('#search-input');
+    const filterType = $('#filter-type');
+    const thActions = $('#th-actions');
+
+    /* ---- Filter helpers ---- */
+    function getVisibleRequests() {
+      let filtered = requests.filter(r => {
+        if (state.activeTab === 'pending') return r.status === 'pending';
+        if (state.activeTab === 'approved') return r.status === 'approved';
+        if (state.activeTab === 'rejected') return r.status === 'rejected';
+        return true;
+      });
+      if (state.searchQuery) {
+        const q = state.searchQuery.toLowerCase();
+        filtered = filtered.filter(r => r.name.toLowerCase().includes(q));
+      }
+      if (state.filterType !== 'all') {
+        filtered = filtered.filter(r => r.type === state.filterType);
+      }
+      return filtered;
+    }
+
+    /* ---- Render table ---- */
+    function renderTable() {
+      const visible = getVisibleRequests();
+      const isHistoryTab = state.activeTab !== 'pending';
+
+      // Update actions column header
+      if (thActions) {
+        thActions.textContent = isHistoryTab ? 'Notes' : 'Actions';
+      }
+
+      // Update search/filter visibility
+      const searchRow = $('#search-filter-row');
+      searchRow.style.display = isHistoryTab ? 'flex' : 'none';
+
+      if (visible.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:40px 16px;color:var(--muted);">
+          <div style="font-size:36px;margin-bottom:8px;">📭</div>
+          <div style="font-weight:600;">No ${state.activeTab} requests found</div>
+        </td></tr>`;
+        return;
+      }
+
+      const typeLabels = { annual: 'Annual', medical: 'Medical', unpaid: 'Unpaid' };
+      const typeIcons = { annual: '🏖️', medical: '🏥', unpaid: '📅' };
+      const statusLabels = { pending: 'Pending', approved: 'Approved', rejected: 'Rejected' };
+
+      let html = '';
+      visible.forEach((r, i) => {
+        const initials = r.name.split(' ').map(w => w[0]).join('');
+        const startDate = new Date(r.start + 'T00:00:00');
+        const endDate = new Date(r.end + 'T00:00:00');
+        const diff = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+        const appliedDate = new Date(r.applied + 'T00:00:00');
+
+        const startStr = startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const endStr = endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const appliedStr = appliedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+        html += `<tr class="row-animate" style="animation-delay:${i * 0.04}s;" data-id="${r.id}">
+          <td>
+            <div class="employee-cell">
+              <div class="emp-avatar" style="background:${r.avatarBg};">${initials}</div>
+              <div>
+                <span class="emp-name">${r.name}</span>
+                <span class="emp-dept">${r.dept}</span>
+              </div>
+            </div>
+          </td>
+          <td><span class="leave-type-badge ${r.type}">${typeIcons[r.type]} ${typeLabels[r.type]}</span></td>
+          <td>${startStr}</td>
+          <td>${endStr}</td>
+          <td>${diff} day${diff > 1 ? 's' : ''}</td>
+          <td>${r.customReason || r.reason}</td>
+          <td>${appliedStr}</td>
+          <td><span class="status-badge ${r.status}"><span class="status-dot ${r.status}"></span> ${statusLabels[r.status]}</span></td>
+          <td>
+            ${isHistoryTab
+              ? (r.rejectReason ? `<span style="font-size:11px;color:var(--muted);">Reason: ${r.rejectReason}</span>` : '<span style="font-size:11px;color:var(--muted);">—</span>')
+              : `<div class="action-btns">
+                  <button class="btn-sm btn-sm-approve" data-action="approve" data-id="${r.id}" title="Approve">✓ Approve</button>
+                  <button class="btn-sm btn-sm-reject" data-action="reject" data-id="${r.id}" title="Reject">✕ Reject</button>
+                </div>`
+            }
+          </td>
+        </tr>`;
+      });
+
+      tableBody.innerHTML = html;
+
+      // Attach row click to open drawer
+      tableBody.querySelectorAll('tr').forEach(row => {
+        row.addEventListener('click', function(e) {
+          // Don't open drawer if clicking action buttons
+          if (e.target.closest('.btn-sm')) return;
+          const id = parseInt(this.dataset.id);
+          openDrawer(id);
+        });
+      });
+
+      // Attach action button handlers
+      $$('.btn-sm-approve').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          const id = parseInt(this.dataset.id);
+          openConfirmModal('approve', id);
+        });
+      });
+      $$('.btn-sm-reject').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          const id = parseInt(this.dataset.id);
+          openConfirmModal('reject', id);
+        });
+      });
+    }
+
+    /* ---- Update stats ---- */
+    function updateStats() {
+      const pending = requests.filter(r => r.status === 'pending').length;
+      const approved = requests.filter(r => r.status === 'approved').length;
+      const rejected = requests.filter(r => r.status === 'rejected').length;
+      const onLeaveToday = 3; // Static demo value
+
+      $('#stat-pending').textContent = pending;
+      $('#stat-approved').textContent = approved;
+      $('#stat-rejected').textContent = rejected;
+      $('#stat-onleave').textContent = onLeaveToday;
+
+      $('#tab-count-pending').textContent = `(${pending})`;
+      $('#tab-count-approved').textContent = `(${approved})`;
+      $('#tab-count-rejected').textContent = `(${rejected})`;
+
+      notifText.textContent = `${pending} Pending`;
+      const notifDot = notifBadge.querySelector('.notif-dot');
+      if (pending === 0) {
+        notifDot.style.display = 'none';
+        notifBadge.style.opacity = '0.6';
+      } else {
+        notifDot.style.display = 'inline-block';
+        notifBadge.style.opacity = '1';
+      }
+    }
+
+    /* ---- Drawer ---- */
+    function openDrawer(requestId) {
+      const r = requests.find(x => x.id === requestId);
+      if (!r) return;
+      state.drawerRequest = r;
+      const initials = r.name.split(' ').map(w => w[0]).join('');
+      const startDate = new Date(r.start + 'T00:00:00');
+      const endDate = new Date(r.end + 'T00:00:00');
+      const diff = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+      const typeLabels = { annual: 'Annual Leave', medical: 'Medical Leave', unpaid: 'Unpaid Leave' };
+
+      drawerBody.innerHTML = `
+        <!-- Employee info -->
+        <div class="drawer-section">
+          <span class="ds-title">Employee</span>
+          <div class="drawer-emp-card">
+            <div class="dec-avatar" style="background:${r.avatarBg};">${initials}</div>
+            <div class="dec-info">
+              <span class="dec-name">${r.name}</span>
+              <span class="dec-email">${r.email}</span>
+              <span class="dec-dept">${r.dept}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Leave info -->
+        <div class="drawer-section">
+          <span class="ds-title">Leave Details</span>
+          <div class="drawer-info-row"><span class="di-label">Type</span><span class="di-value">${typeLabels[r.type]}</span></div>
+          <div class="drawer-info-row"><span class="di-label">Date Range</span><span class="di-value">${startDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })} – ${endDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span></div>
+          <div class="drawer-info-row"><span class="di-label">Total Days</span><span class="di-value">${diff} working day${diff > 1 ? 's' : ''}</span></div>
+          <div class="drawer-info-row"><span class="di-label">Reason</span><span class="di-value">${r.reason}</span></div>
+          ${r.customReason ? `<div class="drawer-info-row"><span class="di-label">Details</span><span class="di-value">${r.customReason}</span></div>` : ''}
+          <div class="drawer-info-row"><span class="di-label">Applied</span><span class="di-value">${new Date(r.applied + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span></div>
+          <div class="drawer-info-row"><span class="di-label">Status</span><span class="di-value" style="color:${r.status === 'approved' ? 'var(--green-status)' : r.status === 'rejected' ? 'var(--red-status)' : 'var(--yellow-status)'};">${r.status.charAt(0).toUpperCase() + r.status.slice(1)}</span></div>
+          ${r.rejectReason ? `<div class="drawer-info-row"><span class="di-label">Rejection Reason</span><span class="di-value" style="color:var(--red-status);">${r.rejectReason}</span></div>` : ''}
+        </div>
+
+        <!-- Balance -->
+        <div class="drawer-section">
+          <span class="ds-title">Leave Balance</span>
+          <div class="balance-row">
+            <div class="balance-chip annual">
+              <span class="bc-type">Annual Leave</span>
+              <span class="bc-days">${r.annualLeft}</span>
+              <span style="font-size:10px;color:var(--muted);">days left</span>
+            </div>
+            <div class="balance-chip medical">
+              <span class="bc-type">Medical Leave</span>
+              <span class="bc-days">${r.medicalLeft}</span>
+              <span style="font-size:10px;color:var(--muted);">days left</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions (only for pending) -->
+        ${r.status === 'pending' ? `
+        <div class="drawer-actions" id="drawer-actions">
+          <button class="btn-approve" id="drawer-approve">✓ Approve</button>
+          <button class="btn-reject" id="drawer-reject">✕ Reject</button>
+        </div>
+        <div class="rejection-section" id="drawer-rejection" style="display:none;">
+          <span class="rj-label">Rejection Reason <span style="color:var(--red-status);">*</span></span>
+          <textarea id="rejection-textarea" placeholder="Provide a reason for rejection…"></textarea>
+          <span class="rj-error" id="rj-error">Please provide a rejection reason</span>
+          <button class="btn-reject" id="drawer-confirm-reject" style="width:100%;margin-top:4px;">Confirm Rejection</button>
+        </div>
+        ` : ''}
+      `;
+
+      drawer.classList.add('open');
+      drawerOverlay.classList.add('open');
+
+      // Drawer action handlers
+      const drawerApprove = $('#drawer-approve');
+      const drawerReject = $('#drawer-reject');
+      if (drawerApprove) {
+        drawerApprove.addEventListener('click', () => {
+          openConfirmModal('approve', r.id);
+        });
+      }
+      if (drawerReject) {
+        drawerReject.addEventListener('click', () => {
+          const actions = $('#drawer-actions');
+          const rejection = $('#drawer-rejection');
+          if (actions) actions.style.display = 'none';
+          if (rejection) rejection.style.display = 'flex';
+        });
+      }
+      const confirmReject = $('#drawer-confirm-reject');
+      if (confirmReject) {
+        confirmReject.addEventListener('click', () => {
+          const textarea = $('#rejection-textarea');
+          const reason = textarea ? textarea.value.trim() : '';
+          if (!reason) {
+            const rjError = $('#rj-error');
+            if (rjError) rjError.style.display = 'block';
+            return;
+          }
+          processRejection(r.id, reason);
+        });
+      }
+    }
+
+    function closeDrawer() {
+      drawer.classList.remove('open');
+      drawerOverlay.classList.remove('open');
+      state.drawerRequest = null;
+      state.rejectionReason = '';
+    }
+
+    $('#drawer-close').addEventListener('click', closeDrawer);
+    drawerOverlay.addEventListener('click', closeDrawer);
+
+    /* ---- Confirmation modal ---- */
+    function openConfirmModal(action, requestId) {
+      state.modalAction = action;
+      state.modalRequestId = requestId;
+      const r = requests.find(x => x.id === requestId);
+      if (!r) return;
+
+      if (action === 'approve') {
+        $('#modal-icon').textContent = '✅';
+        $('#modal-title').textContent = 'Approve Leave Request?';
+        $('#modal-desc').textContent = `You are about to approve ${r.name}'s ${r.type} leave for ${r.start} to ${r.end}. This action will deduct from their leave balance.`;
+        $('#btn-modal-confirm').className = 'btn btn-modal-confirm approve-action';
+        $('#btn-modal-confirm').textContent = 'Yes, Approve';
+      } else {
+        $('#modal-icon').textContent = '⚠️';
+        $('#modal-title').textContent = 'Reject Leave Request?';
+        $('#modal-desc').textContent = `You are about to reject ${r.name}'s ${r.type} leave request. A rejection reason is required.`;
+        $('#btn-modal-confirm').className = 'btn btn-modal-confirm reject-action';
+        $('#btn-modal-confirm').textContent = 'Proceed to Reject';
+      }
+
+      modalOverlay.classList.add('open');
+    }
+
+    function closeModal() {
+      modalOverlay.classList.remove('open');
+      state.modalAction = null;
+      state.modalRequestId = null;
+    }
+
+    $('#btn-modal-cancel').addEventListener('click', closeModal);
+    modalOverlay.addEventListener('click', function(e) {
+      if (e.target === modalOverlay) closeModal();
+    });
+
+    $('#btn-modal-confirm').addEventListener('click', function() {
+      if (state.modalAction === 'approve') {
+        processApproval(state.modalRequestId);
+      } else {
+        // Open drawer with rejection UI for the specific request
+        closeModal();
+        openDrawer(state.modalRequestId);
+        // Auto-show rejection section
+        setTimeout(() => {
+          const actions = $('#drawer-actions');
+          const rejection = $('#drawer-rejection');
+          if (actions) actions.style.display = 'none';
+          if (rejection) rejection.style.display = 'flex';
+        }, 400);
+      }
+    });
+
+    /* ---- Process actions ---- */
+    function processApproval(requestId) {
+      const r = requests.find(x => x.id === requestId);
+      if (!r) return;
+      r.status = 'approved';
+      updateStats();
+      renderTable();
+      closeDrawer();
+      closeModal();
+      showToast('✅', `${r.name}'s leave has been approved.`);
+    }
+
+    function processRejection(requestId, reason) {
+      const r = requests.find(x => x.id === requestId);
+      if (!r) return;
+      r.status = 'rejected';
+      r.rejectReason = reason;
+      updateStats();
+      renderTable();
+      closeDrawer();
+      closeModal();
+      showToast('❌', `${r.name}'s leave request has been rejected.`);
+    }
+
+    /* ---- Toast ---- */
+    function showToast(icon, message) {
+      $('#toast-icon').textContent = icon;
+      $('#toast-msg').textContent = message;
+      toast.className = 'toast';
+      if (icon === '❌') toast.classList.add('warning');
+      toast.classList.add('show');
+      clearTimeout(toast._timeout);
+      toast._timeout = setTimeout(() => toast.classList.remove('show'), 3200);
+    }
+
+    /* ---- Tab switching ---- */
+    $$('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        $$('.tab-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        state.activeTab = this.dataset.tab;
+        state.searchQuery = '';
+        state.filterType = 'all';
+        searchInput.value = '';
+        filterType.value = 'all';
+        updateStats();
+        renderTable();
+      });
+    });
+
+    /* ---- Search & Filter ---- */
+    searchInput.addEventListener('input', function() {
+      state.searchQuery = this.value;
+      renderTable();
+    });
+    filterType.addEventListener('change', function() {
+      state.filterType = this.value;
+      renderTable();
+    });
+
+    /* ---- Notif badge click => switch to pending tab ---- */
+    notifBadge.addEventListener('click', () => {
+      $$('.tab-btn').forEach(b => b.classList.remove('active'));
+      const pendingTab = document.querySelector('.tab-btn[data-tab="pending"]');
+      if (pendingTab) pendingTab.classList.add('active');
+      state.activeTab = 'pending';
+      renderTable();
+    });
+
+    /* ---- Keyboard shortcuts ---- */
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        if (modalOverlay.classList.contains('open')) closeModal();
+        else if (drawer.classList.contains('open')) closeDrawer();
+      }
+    });
+
+    /* ---- Init ---- */
+    updateStats();
+    renderTable();
+
+    console.log('👑 LeafPoint Boss Approval Dashboard ready.');
+    console.log('💡 Click any row to open the detail drawer. Use Approve/Reject buttons for quick actions.');
+  </script>
+</body>
+</html>

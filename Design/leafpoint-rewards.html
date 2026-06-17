@@ -1,0 +1,932 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Rewards Store — LeafPoint</title>
+  <style>
+    /* ============================================================
+       DESIGN TOKENS — LeafPoint System
+       ============================================================ */
+    :root {
+      --bg: oklch(97% 0.005 245);
+      --bg-gradient: radial-gradient(ellipse at 50% 0%, oklch(90% 0.04 170 / 0.2), oklch(97% 0.004 245) 55%);
+      --surface-glass: rgba(255, 255, 255, 0.55);
+      --surface-glass-hover: rgba(255, 255, 255, 0.74);
+      --surface-solid: #ffffff;
+      --fg: oklch(16% 0.018 252);
+      --fg-secondary: oklch(38% 0.022 250);
+      --muted: oklch(54% 0.016 250);
+      --border-glass: rgba(255, 255, 255, 0.4);
+      --border-subtle: rgba(0, 0, 0, 0.055);
+
+      --accent: oklch(56% 0.19 148);
+      --accent-soft: oklch(74% 0.14 148);
+      --accent-glow: oklch(62% 0.21 148 / 0.35);
+      --accent-dark: oklch(48% 0.16 148);
+      --gold: oklch(70% 0.19 82);
+      --gold-soft: oklch(82% 0.13 82);
+
+      --green-status: oklch(58% 0.17 142);
+      --yellow-status: oklch(68% 0.15 85);
+      --red-status: oklch(53% 0.22 22);
+      --blue-info: oklch(56% 0.16 255);
+      --gray-muted: oklch(68% 0.005 250);
+
+      --radius-sm: 10px;
+      --radius-md: 16px;
+      --radius-lg: 22px;
+      --radius-xl: 28px;
+      --shadow-card: 0 2px 16px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.03);
+      --shadow-card-hover: 0 6px 28px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.04);
+      --shadow-modal: 0 20px 60px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.06);
+
+      --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+      --font-mono: 'SF Mono', ui-monospace, 'JetBrains Mono', Menlo, monospace;
+
+      --bottom-nav-h: 68px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; min-height: 100%;
+      font-family: var(--font-body);
+      color: var(--fg);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ---- Page shell (mobile-first) ---- */
+    .page {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 0 16px 100px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-height: 100vh;
+    }
+
+    /* ---- Top bar ---- */
+    .topbar {
+      position: sticky; top: 0; z-index: 20;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 0 10px;
+      background: oklch(97% 0.005 245 / 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .topbar .back-btn {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--surface-glass); border: 1px solid var(--border-subtle);
+      display: grid; place-items: center; font-size: 18px;
+      cursor: pointer; transition: background 0.15s; color: var(--fg);
+      text-decoration: none;
+    }
+    .topbar .back-btn:hover { background: var(--surface-glass-hover); }
+    .topbar .title {
+      font-family: var(--font-display); font-size: 18px; font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .topbar .cart-btn {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--surface-glass); border: 1px solid var(--border-subtle);
+      display: grid; place-items: center; font-size: 18px;
+      cursor: pointer; transition: background 0.15s; color: var(--fg);
+      position: relative;
+    }
+    .topbar .cart-btn:hover { background: var(--surface-glass-hover); }
+    .topbar .cart-btn .cart-badge {
+      position: absolute; top: -4px; right: -4px;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: var(--accent); color: #fff;
+      font-size: 10px; font-weight: 700;
+      display: grid; place-items: center;
+    }
+
+    /* ---- Glass card ---- */
+    .card {
+      background: var(--surface-glass);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      padding: 18px;
+      display: flex; flex-direction: column; gap: 14px;
+      transition: box-shadow 0.2s, background 0.2s;
+    }
+    .card:hover { background: var(--surface-glass-hover); box-shadow: var(--shadow-card-hover); }
+    .card-header {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      flex-wrap: wrap;
+    }
+    .card-title {
+      font-family: var(--font-display); font-size: 15px; font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+    .card-subtitle { font-size: 11px; color: var(--muted); }
+
+    /* ============================================================
+       POINTS HERO
+       ============================================================ */
+    .points-hero {
+      position: relative;
+      background: var(--surface-glass);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-card), 0 0 50px oklch(70% 0.19 82 / 0.2);
+      padding: 24px 20px;
+      display: flex; flex-direction: column; align-items: center;
+      gap: 8px; text-align: center; overflow: hidden;
+    }
+    .points-hero::before {
+      content: '';
+      position: absolute; top: -50px; right: -40px;
+      width: 200px; height: 200px;
+      background: radial-gradient(circle, oklch(70% 0.19 82 / 0.15), transparent 70%);
+      pointer-events: none;
+    }
+    .points-hero::after {
+      content: '';
+      position: absolute; bottom: -30px; left: -30px;
+      width: 160px; height: 160px;
+      background: radial-gradient(circle, oklch(56% 0.19 148 / 0.1), transparent 70%);
+      pointer-events: none;
+    }
+    .points-hero .points-icon {
+      font-size: 40px; position: relative; z-index: 1;
+      animation: floatCoin 3s ease-in-out infinite;
+    }
+    @keyframes floatCoin {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+    .points-hero .points-value {
+      font-family: var(--font-display); font-size: 42px; font-weight: 800;
+      letter-spacing: -0.03em; color: var(--fg); position: relative; z-index: 1;
+    }
+    .points-hero .points-value .pts-unit {
+      font-size: 18px; font-weight: 600; color: var(--muted);
+      margin-left: 4px;
+    }
+    .points-hero .points-sub {
+      font-size: 13px; color: var(--muted); position: relative; z-index: 1;
+      max-width: 280px; line-height: 1.5;
+    }
+    .points-hero .points-meta {
+      display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+      position: relative; z-index: 1; margin-top: 4px;
+    }
+    .points-hero .points-meta .meta-pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 5px 12px; border-radius: 999px;
+      font-size: 11px; font-weight: 600;
+      background: oklch(94% 0.04 85); color: oklch(42% 0.12 80);
+    }
+
+    /* ============================================================
+       STORE GRID
+       ============================================================ */
+    .store-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    }
+    .reward-card {
+      background: var(--surface-glass);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+      display: flex; flex-direction: column;
+      transition: all 0.25s;
+      cursor: pointer;
+    }
+    .reward-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-card-hover);
+      background: var(--surface-glass-hover);
+    }
+    .reward-card .card-image {
+      width: 100%; aspect-ratio: 4/3;
+      display: grid; place-items: center;
+      font-size: 48px;
+      position: relative; overflow: hidden;
+    }
+    .reward-card .card-image .img-bg {
+      position: absolute; inset: 0;
+      transition: transform 0.4s;
+    }
+    .reward-card:hover .card-image .img-bg {
+      transform: scale(1.05);
+    }
+    .reward-card .card-image .img-icon {
+      position: relative; z-index: 1;
+      filter: drop-shadow(0 4px 12px rgba(0,0,0,0.1));
+    }
+    .reward-card .card-body {
+      padding: 14px;
+      display: flex; flex-direction: column; gap: 8px;
+      flex: 1;
+    }
+    .reward-card .card-name {
+      font-family: var(--font-display); font-size: 14px; font-weight: 700;
+      letter-spacing: -0.01em; color: var(--fg);
+    }
+    .reward-card .card-price {
+      display: flex; align-items: center; gap: 4px;
+      font-family: var(--font-mono); font-size: 13px; font-weight: 700;
+      color: var(--gold);
+    }
+    .reward-card .card-stock {
+      font-size: 10px; color: var(--muted);
+    }
+    .reward-card .card-stock.low { color: var(--red-status); font-weight: 600; }
+    .reward-card .btn-redeem {
+      width: 100%; padding: 10px; border: none;
+      border-radius: var(--radius-sm);
+      background: var(--accent); color: #fff;
+      font-family: var(--font-body); font-size: 13px; font-weight: 700;
+      cursor: pointer; transition: all 0.2s;
+      letter-spacing: -0.01em;
+    }
+    .reward-card .btn-redeem:hover {
+      background: var(--accent-dark);
+      box-shadow: 0 4px 16px oklch(56% 0.19 148 / 0.3);
+    }
+    .reward-card .btn-redeem:disabled {
+      background: oklch(88% 0.01 155); color: oklch(60% 0.03 155);
+      cursor: not-allowed;
+    }
+    .reward-card .btn-redeem:disabled:hover { box-shadow: none; }
+
+    /* ---- Category tabs ---- */
+    .category-tabs {
+      display: flex; gap: 6px; overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      padding: 2px 0;
+    }
+    .category-tabs::-webkit-scrollbar { display: none; }
+    .category-tab {
+      padding: 8px 16px; border-radius: 999px;
+      border: 1.5px solid var(--border-subtle);
+      background: transparent; color: var(--fg-secondary);
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      transition: all 0.2s; white-space: nowrap;
+      font-family: var(--font-body);
+      letter-spacing: -0.01em;
+      flex-shrink: 0;
+    }
+    .category-tab:hover { border-color: var(--accent-soft); color: var(--accent); }
+    .category-tab.active {
+      background: var(--accent); color: #fff; border-color: var(--accent);
+      box-shadow: 0 2px 10px oklch(56% 0.19 148 / 0.3);
+    }
+
+    /* ============================================================
+       CONFIRMATION MODAL
+       ============================================================ */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 50;
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.25s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: auto; }
+    .modal-dialog {
+      background: var(--surface-solid);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-modal);
+      padding: 28px 24px 20px;
+      max-width: 400px; width: 100%;
+      text-align: center;
+      display: flex; flex-direction: column; gap: 16px;
+      transform: translateY(20px) scale(0.96);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .modal-overlay.open .modal-dialog {
+      transform: translateY(0) scale(1);
+    }
+    .modal-dialog .modal-icon {
+      font-size: 56px;
+      animation: modalPopIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes modalPopIn {
+      0% { transform: scale(0); opacity: 0; }
+      60% { transform: scale(1.2); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .modal-dialog .modal-title {
+      font-family: var(--font-display); font-size: 20px; font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .modal-dialog .modal-desc {
+      font-size: 14px; color: var(--fg-secondary); line-height: 1.5;
+    }
+    .modal-dialog .modal-detail {
+      background: oklch(96% 0.01 240); border-radius: var(--radius-sm);
+      padding: 12px 16px; font-size: 12px; color: var(--fg-secondary);
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .modal-dialog .modal-detail .md-row {
+      display: flex; justify-content: space-between;
+    }
+    .modal-dialog .modal-detail .md-row .md-label { color: var(--muted); }
+    .modal-dialog .modal-detail .md-row .md-value { font-weight: 700; color: var(--fg); }
+    .modal-actions {
+      display: flex; gap: 10px;
+    }
+    .modal-actions .btn {
+      flex: 1; padding: 12px; border-radius: var(--radius-sm);
+      font-family: var(--font-body); font-size: 14px; font-weight: 700;
+      cursor: pointer; transition: all 0.2s;
+      letter-spacing: -0.01em; border: none;
+    }
+    .btn-cancel {
+      background: oklch(92% 0.006 250); color: var(--fg-secondary);
+    }
+    .btn-cancel:hover { background: oklch(87% 0.006 250); }
+    .btn-confirm {
+      background: var(--accent); color: #fff;
+      box-shadow: 0 4px 16px oklch(56% 0.19 148 / 0.3);
+    }
+    .btn-confirm:hover {
+      background: var(--accent-dark);
+      box-shadow: 0 6px 22px oklch(56% 0.19 148 / 0.4);
+    }
+    .btn-confirm:disabled {
+      opacity: 0.6; cursor: not-allowed;
+    }
+    .modal-dialog .confetti {
+      position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+      font-size: 32px; animation: confettiBurst 0.6s ease-out forwards;
+      pointer-events: none;
+    }
+    @keyframes confettiBurst {
+      0% { opacity: 1; transform: translateX(-50%) scale(0.5) rotate(0deg); }
+      100% { opacity: 0; transform: translateX(-50%) scale(1.8) rotate(180deg) translateY(-60px); }
+    }
+
+    /* ---- Success state modal ---- */
+    .modal-dialog.success .modal-icon { animation: modalPopIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+    .modal-dialog.success .modal-title { color: var(--green-status); }
+
+    /* ---- Toast ---- */
+    .toast {
+      position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-120px);
+      background: var(--surface-solid); border: 1px solid var(--green-status);
+      border-radius: var(--radius-md); padding: 14px 20px;
+      font-weight: 600; font-size: 14px; color: var(--fg);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+      z-index: 100;
+      display: flex; align-items: center; gap: 8px;
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* ============================================================
+       REDEMPTION HISTORY TABLE
+       ============================================================ */
+    .table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin: -4px -4px 0;
+      padding: 4px;
+    }
+    .table-wrap::-webkit-scrollbar { height: 4px; }
+    .table-wrap::-webkit-scrollbar-track { background: transparent; }
+    .table-wrap::-webkit-scrollbar-thumb { background: oklch(85% 0.005 250); border-radius: 2px; }
+
+    table.history-table {
+      width: 100%; border-collapse: collapse;
+      font-size: 13px; min-width: 480px;
+    }
+    table.history-table thead th {
+      text-align: left; padding: 10px 12px;
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--muted); font-weight: 700;
+      border-bottom: 1px solid var(--border-subtle);
+      white-space: nowrap;
+    }
+    table.history-table tbody td {
+      padding: 12px;
+      border-bottom: 1px solid oklch(94% 0.003 250);
+      white-space: nowrap;
+    }
+    table.history-table tbody tr {
+      transition: background 0.15s;
+    }
+    table.history-table tbody tr:hover { background: rgba(0,0,0,0.018); }
+    table.history-table tbody tr:last-child td { border-bottom: none; }
+
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 12px; border-radius: 999px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.01em;
+    }
+    .status-badge.pending { background: oklch(94% 0.06 85); color: oklch(42% 0.12 80); }
+    .status-badge.completed { background: oklch(92% 0.06 148); color: oklch(36% 0.1 148); }
+    .status-badge.cancelled { background: oklch(92% 0.003 250); color: oklch(48% 0.005 250); }
+    .status-badge.rejected { background: oklch(92% 0.04 22); color: oklch(40% 0.12 22); }
+    .status-dot {
+      width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+    }
+    .status-dot.pending { background: var(--yellow-status); animation: pulse-dot 1.6s ease-in-out infinite; }
+    .status-dot.completed { background: var(--green-status); }
+    .status-dot.cancelled { background: var(--gray-muted); }
+    .status-dot.rejected { background: var(--red-status); }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.35; }
+    }
+
+    /* ============================================================
+       BOTTOM NAVIGATION (mobile only)
+       ============================================================ */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
+      height: var(--bottom-nav-h);
+      background: oklch(98% 0.003 250 / 0.88);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-top: 1px solid rgba(0,0,0,0.06);
+      display: flex; align-items: center; justify-content: space-around;
+      padding: 0 8px;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    .bottom-nav .nav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      padding: 6px 10px; border: none; background: none;
+      font: 10px/1 var(--font-body); color: var(--muted);
+      cursor: pointer; transition: color 0.15s; font-weight: 500;
+      min-width: 56px; text-decoration: none;
+    }
+    .bottom-nav .nav-item .nav-icon { font-size: 20px; line-height: 1; }
+    .bottom-nav .nav-item.active { color: var(--accent); font-weight: 700; }
+
+    /* ============================================================
+       RESPONSIVE — Tablet (600px+)
+       ============================================================ */
+    @media (min-width: 600px) {
+      .page {
+        max-width: 720px; padding: 0 24px 40px; gap: 20px;
+      }
+      .bottom-nav { display: none; }
+      .topbar { padding: 18px 0 12px; }
+      .topbar .title { font-size: 20px; }
+      .card { padding: 22px 24px; }
+      .points-hero { padding: 32px 28px; }
+      .points-hero .points-value { font-size: 52px; }
+      .store-grid { grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+      .reward-card .card-name { font-size: 15px; }
+      table.history-table { font-size: 14px; }
+      table.history-table thead th { font-size: 11px; }
+    }
+
+    /* ============================================================
+       RESPONSIVE — Desktop (1024px+)
+       ============================================================ */
+    @media (min-width: 1024px) {
+      .page {
+        max-width: 1060px; padding: 0 32px 48px; gap: 24px;
+      }
+      .card { padding: 26px 30px; }
+      .card-title { font-size: 17px; }
+      .points-hero { padding: 36px 32px; }
+      .points-hero .points-value { font-size: 60px; }
+      .store-grid { grid-template-columns: repeat(4, 1fr); gap: 16px; }
+      .reward-card .card-name { font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==========================================================
+       TOAST
+       ========================================================== -->
+  <div class="toast" id="toast">
+    <span id="toast-icon">✅</span>
+    <span id="toast-msg">Reward redeemed successfully!</span>
+  </div>
+
+  <!-- ==========================================================
+       MODAL
+       ========================================================== -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal-dialog" id="modal-dialog">
+      <span class="modal-icon" id="modal-icon">🎁</span>
+      <div class="modal-title" id="modal-title">Confirm Redemption</div>
+      <div class="modal-desc" id="modal-desc">You are about to redeem this reward using your points.</div>
+      <div class="modal-detail" id="modal-detail">
+        <div class="md-row"><span class="md-label">Item</span><span class="md-value" id="md-item">—</span></div>
+        <div class="md-row"><span class="md-label">Points Required</span><span class="md-value" id="md-points">—</span></div>
+        <div class="md-row"><span class="md-label">Your Balance</span><span class="md-value" id="md-balance">—</span></div>
+        <div class="md-row"><span class="md-label">Remaining After</span><span class="md-value" id="md-remaining">—</span></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-cancel" id="btn-cancel">Cancel</button>
+        <button class="btn btn-confirm" id="btn-confirm">Confirm Redemption</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================
+       PAGE
+       ========================================================== -->
+  <div class="page">
+
+    <!-- Top bar -->
+    <header class="topbar">
+      <a class="back-btn" href="#" aria-label="Back" onclick="history.back();return false;">←</a>
+      <span class="title">🎁 Rewards Store</span>
+      <div class="cart-btn" aria-label="Redemption history">
+        📋
+        <span class="cart-badge" id="cart-count">0</span>
+      </div>
+    </header>
+
+    <!-- ======================================================
+         POINTS HERO
+         ====================================================== -->
+    <section class="points-hero" id="points-hero">
+      <span class="points-icon">⭐</span>
+      <div class="points-value">
+        12,450<span class="pts-unit">pts</span>
+      </div>
+      <p class="points-sub">Earn more points through consistent attendance, streaks, and achievements</p>
+      <div class="points-meta">
+        <span class="meta-pill">🔥 12-Day Streak</span>
+        <span class="meta-pill">✅ 5-Day Bonus Active</span>
+        <span class="meta-pill">🏆 3 Achievements</span>
+      </div>
+    </section>
+
+    <!-- ======================================================
+         CATEGORY TABS
+         ====================================================== -->
+    <div class="category-tabs" id="category-tabs">
+      <button class="category-tab active" data-category="all">All Rewards</button>
+      <button class="category-tab" data-category="electronics">📱 Electronics</button>
+      <button class="category-tab" data-category="vouchers">🎟️ Vouchers</button>
+      <button class="category-tab" data-category="accessories">⌨️ Accessories</button>
+      <button class="category-tab" data-category="lifestyle">🌿 Lifestyle</button>
+    </div>
+
+    <!-- ======================================================
+         STORE GRID
+         ====================================================== -->
+    <section class="store-grid" id="store-grid">
+      <!-- Cards rendered by JS -->
+    </section>
+
+    <!-- ======================================================
+         REDEMPTION HISTORY
+         ====================================================== -->
+    <section class="card" id="history-card">
+      <div class="card-header">
+        <span class="card-title">📜 My Redemptions</span>
+        <span class="card-subtitle" id="history-count">3 items</span>
+      </div>
+      <div class="table-wrap">
+        <table class="history-table" id="history-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Product</th>
+              <th>Points Spent</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="history-body">
+            <tr>
+              <td>Apr 12, 2025</td>
+              <td>Starbucks Voucher</td>
+              <td>500 pts</td>
+              <td><span class="status-badge completed"><span class="status-dot completed"></span> Completed</span></td>
+            </tr>
+            <tr>
+              <td>Mar 28, 2025</td>
+              <td>Mechanical Keyboard</td>
+              <td>3,200 pts</td>
+              <td><span class="status-badge completed"><span class="status-dot completed"></span> Completed</span></td>
+            </tr>
+            <tr>
+              <td>Mar 15, 2025</td>
+              <td>Steam Gift Card ($10)</td>
+              <td>1,000 pts</td>
+              <td><span class="status-badge completed"><span class="status-dot completed"></span> Completed</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ==========================================================
+       BOTTOM NAVIGATION (mobile)
+       ========================================================== -->
+  <nav class="bottom-nav">
+    <a class="nav-item" href="#"><span class="nav-icon">◈</span> Home</a>
+    <a class="nav-item" href="#"><span class="nav-icon">📅</span> Calendar</a>
+    <a class="nav-item" href="#"><span class="nav-icon">🌳</span> My Tree</a>
+    <a class="nav-item active" href="#"><span class="nav-icon">🎁</span> Rewards</a>
+    <a class="nav-item" href="#"><span class="nav-icon">👤</span> Profile</a>
+  </nav>
+
+  <!-- ==========================================================
+       SCRIPTS
+       ========================================================== -->
+  <script>
+    /* ---- App State ---- */
+    const state = {
+      points: 12450,
+      activeCategory: 'all',
+      pendingRedemption: null,
+    };
+
+    /* ---- Reward catalog ---- */
+    const rewards = [
+      {
+        id: 1, name: 'AirPods Pro', category: 'electronics',
+        points: 8500, stock: 3,
+        icon: '🎧', bg: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
+      },
+      {
+        id: 2, name: 'iPhone 15 Pro', category: 'electronics',
+        points: 45000, stock: 1,
+        icon: '📱', bg: 'linear-gradient(135deg, #0d0d0d 0%, #1a1a2e 50%, #2d2d44 100%)',
+      },
+      {
+        id: 3, name: 'Mechanical Keyboard', category: 'accessories',
+        points: 3200, stock: 8,
+        icon: '⌨️', bg: 'linear-gradient(135deg, #2c2c2c 0%, #3a3a3a 50%, #1e1e1e 100%)',
+      },
+      {
+        id: 4, name: 'Steam Gift Card ($10)', category: 'vouchers',
+        points: 1000, stock: 15,
+        icon: '🎮', bg: 'linear-gradient(135deg, #1b2838 0%, #2a475e 50%, #171a21 100%)',
+      },
+      {
+        id: 5, name: 'Starbucks Voucher', category: 'vouchers',
+        points: 500, stock: 25,
+        icon: '☕', bg: 'linear-gradient(135deg, #00704A 0%, #1e3932 50%, #004225 100%)',
+      },
+      {
+        id: 6, name: 'Noise-Cancelling Headphones', category: 'electronics',
+        points: 6200, stock: 4,
+        icon: '🎧', bg: 'linear-gradient(135deg, #1c1c1e 0%, #2c2c2e 50%, #3a3a3c 100%)',
+      },
+      {
+        id: 7, name: 'Desk Plant Set', category: 'lifestyle',
+        points: 800, stock: 10,
+        icon: '🪴', bg: 'linear-gradient(135deg, #2d6a4f 0%, #40916c 50%, #1b4332 100%)',
+      },
+      {
+        id: 8, name: 'Movie Ticket (2 pax)', category: 'vouchers',
+        points: 1200, stock: 12,
+        icon: '🎬', bg: 'linear-gradient(135deg, #1a1a2e 0%, #e94560 50%, #0f3460 100%)',
+      },
+      {
+        id: 9, name: 'Wireless Mouse', category: 'accessories',
+        points: 1500, stock: 6,
+        icon: '🖱️', bg: 'linear-gradient(135deg, #2d2d2d 0%, #424242 50%, #1a1a1a 100%)',
+      },
+      {
+        id: 10, name: 'Fitness Tracker', category: 'lifestyle',
+        points: 4200, stock: 5,
+        icon: '⌚', bg: 'linear-gradient(135deg, #0d1b2a 0%, #1b2838 50%, #415a77 100%)',
+      },
+      {
+        id: 11, name: 'Amazon Gift Card ($25)', category: 'vouchers',
+        points: 2500, stock: 18,
+        icon: '🛒', bg: 'linear-gradient(135deg, #232f3e 0%, #ff9900 50%, #131921 100%)',
+      },
+      {
+        id: 12, name: 'Standing Desk Converter', category: 'accessories',
+        points: 7800, stock: 2,
+        icon: '📐', bg: 'linear-gradient(135deg, #3e3e3e 0%, #5a5a5a 50%, #2a2a2a 100%)',
+      },
+    ];
+
+    /* ---- DOM refs ---- */
+    const $ = (s) => document.querySelector(s);
+    const $$ = (s) => document.querySelectorAll(s);
+    const storeGrid = $('#store-grid');
+    const modalOverlay = $('#modal-overlay');
+    const modalDialog = $('#modal-dialog');
+    const pointsValue = document.querySelector('.points-value');
+    const historyBody = $('#history-body');
+    const historyCount = $('#history-count');
+    const toast = $('#toast');
+    const cartCount = $('#cart-count');
+
+    /* ---- Render store grid ---- */
+    function renderStore() {
+      const filtered = state.activeCategory === 'all'
+        ? rewards
+        : rewards.filter(r => r.category === state.activeCategory);
+
+      let html = '';
+      filtered.forEach(r => {
+        const canAfford = state.points >= r.points;
+        const stockClass = r.stock <= 2 ? ' low' : '';
+        html += `
+          <div class="reward-card" data-id="${r.id}" data-category="${r.category}">
+            <div class="card-image" style="background:${r.bg};">
+              <span class="img-icon">${r.icon}</span>
+            </div>
+            <div class="card-body">
+              <span class="card-name">${r.name}</span>
+              <span class="card-price">⭐ ${r.points.toLocaleString()} pts</span>
+              <span class="card-stock${stockClass}">${r.stock} left in stock</span>
+              <button class="btn-redeem" ${!canAfford ? 'disabled' : ''}
+                ${!canAfford ? `title="Need ${(r.points - state.points).toLocaleString()} more points"` : ''}>
+                ${canAfford ? 'Redeem Reward' : `Need ${(r.points - state.points).toLocaleString()} more pts`}
+              </button>
+            </div>
+          </div>`;
+      });
+
+      storeGrid.innerHTML = html;
+
+      // Attach click handlers to redeem buttons
+      $$('.btn-redeem:not([disabled])').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          const card = this.closest('.reward-card');
+          const id = parseInt(card.dataset.id);
+          openModal(id);
+        });
+      });
+    }
+
+    /* ---- Modal ---- */
+    function openModal(rewardId) {
+      const reward = rewards.find(r => r.id === rewardId);
+      if (!reward) return;
+
+      state.pendingRedemption = reward;
+
+      $('#modal-icon').textContent = reward.icon;
+      $('#modal-title').textContent = 'Confirm Redemption';
+      $('#modal-desc').textContent = 'You are about to redeem this reward using your points.';
+      $('#md-item').textContent = reward.name;
+      $('#md-points').textContent = '⭐ ' + reward.points.toLocaleString() + ' pts';
+      $('#md-balance').textContent = '⭐ ' + state.points.toLocaleString() + ' pts';
+      const remaining = state.points - reward.points;
+      $('#md-remaining').textContent = '⭐ ' + remaining.toLocaleString() + ' pts';
+      $('#btn-confirm').disabled = false;
+      $('#btn-confirm').textContent = 'Confirm Redemption';
+      modalDialog.classList.remove('success');
+      modalOverlay.classList.add('open');
+    }
+
+    function closeModal() {
+      modalOverlay.classList.remove('open');
+      state.pendingRedemption = null;
+    }
+
+    $('#btn-cancel').addEventListener('click', closeModal);
+    modalOverlay.addEventListener('click', function(e) {
+      if (e.target === modalOverlay) closeModal();
+    });
+
+    $('#btn-confirm').addEventListener('click', function() {
+      if (!state.pendingRedemption) return;
+      const reward = state.pendingRedemption;
+
+      // Deduct points
+      state.points -= reward.points;
+
+      // Decrease stock
+      reward.stock--;
+
+      // Update UI
+      updatePointsDisplay();
+
+      // Show success in modal
+      $('#modal-icon').textContent = '🎉';
+      $('#modal-title').textContent = 'Redemption Successful!';
+      $('#modal-desc').textContent = `Your ${reward.name} will be processed shortly.`;
+      $('#md-remaining').textContent = '⭐ ' + state.points.toLocaleString() + ' pts';
+      $('#btn-confirm').disabled = true;
+      $('#btn-confirm').textContent = 'Redeemed ✓';
+      modalDialog.classList.add('success');
+
+      // Add to history
+      addHistoryEntry(reward);
+
+      // Update cart badge
+      updateCartBadge();
+
+      // Re-render store after short delay
+      setTimeout(() => {
+        closeModal();
+        renderStore();
+        showToast('✅', `Redeemed ${reward.name} for ${reward.points.toLocaleString()} pts!`);
+      }, 1800);
+    });
+
+    function addHistoryEntry(reward) {
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${dateStr}</td>
+        <td>${reward.name}</td>
+        <td>${reward.points.toLocaleString()} pts</td>
+        <td><span class="status-badge pending"><span class="status-dot pending"></span> Pending</span></td>
+      `;
+      row.style.animation = 'fadeInUp 0.4s ease';
+      historyBody.insertBefore(row, historyBody.firstChild);
+      updateHistoryCount();
+    }
+
+    function updateHistoryCount() {
+      const rows = historyBody.querySelectorAll('tr');
+      historyCount.textContent = rows.length + ' item' + (rows.length !== 1 ? 's' : '');
+    }
+
+    function updateCartBadge() {
+      const rows = historyBody.querySelectorAll('tr');
+      const pendingCount = Array.from(rows).filter(r =>
+        r.querySelector('.status-badge.pending')
+      ).length;
+      cartCount.textContent = pendingCount;
+      cartCount.style.display = pendingCount > 0 ? 'grid' : 'none';
+    }
+
+    function updatePointsDisplay() {
+      const ptsEl = document.querySelector('.points-hero .points-value');
+      if (ptsEl) {
+        ptsEl.innerHTML = `${state.points.toLocaleString()}<span class="pts-unit">pts</span>`;
+      }
+    }
+
+    /* ---- Toast ---- */
+    function showToast(icon, message) {
+      $('#toast-icon').textContent = icon;
+      $('#toast-msg').textContent = message;
+      toast.classList.add('show');
+      clearTimeout(toast._timeout);
+      toast._timeout = setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    /* ---- Category tabs ---- */
+    $$('.category-tab').forEach(tab => {
+      tab.addEventListener('click', function() {
+        $$('.category-tab').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        state.activeCategory = this.dataset.category;
+        renderStore();
+      });
+    });
+
+    /* ---- Bottom nav ---- */
+    $$('.bottom-nav .nav-item').forEach(item => {
+      item.addEventListener('click', function(e) {
+        $$('.bottom-nav .nav-item').forEach(i => i.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+
+    /* ---- Keyboard: Escape to close modal ---- */
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && modalOverlay.classList.contains('open')) {
+        closeModal();
+      }
+    });
+
+    /* ---- Init ---- */
+    renderStore();
+    updateHistoryCount();
+    updateCartBadge();
+    // Hide cart badge initially since no pending items
+    if (cartCount.textContent === '0') cartCount.style.display = 'none';
+
+    console.log('🎁 LeafPoint Rewards Store ready.');
+    console.log('💡 Tip: Click any "Redeem Reward" button to see the confirmation modal.');
+  </script>
+
+  <style>
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</body>
+</html>
