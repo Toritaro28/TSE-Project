@@ -45,7 +45,10 @@ INSERT INTO `system_settings` (`setting_key`, `setting_value`, `description`) VA
 ('office_lat', '3.141592', 'Company Office Latitude'),
 ('office_lng', '101.686530', 'Company Office Longitude'),
 ('office_ip', '192.168.1.100', 'Company Public Wi-Fi IP'),
-('leave_rolling_months', '3', 'Max months ahead employee can apply for leave');
+('leave_rolling_months', '3', 'Max months ahead employee can apply for leave'),
+('enable_ip_validation', '0', 'Enable/disable office IP validation for check-in (0=off, 1=on)'),
+('office_radius', '200', 'Office GPS radius in meters for attendance validation'),
+('enable_gps_validation', '0', 'Enable/disable GPS validation for check-in (0=off, 1=on)');
 
 -- ========================================================================
 -- TABLE 3: attendance (Tracks daily clock-in/out, GPS, IP, and Points)

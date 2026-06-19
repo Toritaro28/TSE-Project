@@ -574,10 +574,12 @@ while ($row = $stmt->fetch()) {
       checkedOut: <?= $has_checked_out ? 'true' : 'false' ?>,
     };
 
-    function processCheckIn() {
+    function doCheckIn(lat, lng) {
+      const body = { action: 'check_in' };
+      if (lat !== null) { body.latitude = lat; body.longitude = lng; }
       fetch('process_attendance.php', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'check_in' })
+        body: JSON.stringify(body)
       }).then(res => res.json()).then(data => {
         if (data.success) {
           let msg = data.badge ? "🏆 30-Day Iron Man! +100 Bonus Points!" :
@@ -586,6 +588,23 @@ while ($row = $stmt->fetch()) {
           alert(msg); location.reload();
         } else { alert(data.message); }
       });
+    }
+
+    function processCheckIn() {
+      // Request browser geolocation (non-blocking — check-in proceeds either way)
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          function(pos) { doCheckIn(pos.coords.latitude, pos.coords.longitude); },
+          function(err) {
+            // Permission denied, unavailable, or timeout — proceed without GPS
+            console.log('Geolocation skipped: ' + err.message);
+            doCheckIn(null, null);
+          },
+          { timeout: 8000, maximumAge: 60000 }
+        );
+      } else {
+        doCheckIn(null, null);
+      }
     }
 
     function processCheckOut() {

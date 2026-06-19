@@ -11,20 +11,101 @@ $active_page = 'settings';
 $message = '';
 $message_type = '';
 
-// Handle save
-if (isset($_POST['save_settings'])) {
+// Handle leave rolling window save
+if (isset($_POST['save_leave'])) {
     $rolling = (int)$_POST['leave_rolling_months'];
     $rolling = in_array($rolling, [1, 3, 6, 12]) ? $rolling : 3;
 
     $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value, description) VALUES ('leave_rolling_months', ?, 'Max months ahead employee can apply for leave') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
     $stmt->execute([$rolling]);
-    $message = "Settings saved. Leave rolling window set to $rolling month(s).";
+    $message = "Leave rolling window set to $rolling month(s).";
     $message_type = 'success';
 }
 
-// Fetch current value
+// Handle office IP save
+if (isset($_POST['save_ip'])) {
+    $ip = trim($_POST['office_ip']);
+
+    // Validate IPv4 format
+    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+        $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value, description) VALUES ('office_ip', ?, 'Company Public Wi-Fi IP') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
+        $stmt->execute([$ip]);
+        $message = "Office IP updated to $ip.";
+        $message_type = 'success';
+    } else {
+        $message = "Invalid IP address format. Please enter a valid IPv4 address (e.g. 192.168.1.100).";
+        $message_type = 'error';
+    }
+}
+
+// Handle IP validation toggle
+if (isset($_POST['save_validation'])) {
+    $enabled = isset($_POST['enable_ip_validation']) ? 1 : 0;
+    $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value, description) VALUES ('enable_ip_validation', ?, 'Enable/disable office IP validation for check-in') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
+    $stmt->execute([$enabled]);
+    $message = "IP validation " . ($enabled ? 'enabled' : 'disabled') . ".";
+    $message_type = 'success';
+}
+
+// Handle GPS coordinate save
+if (isset($_POST['save_gps'])) {
+    $lat = $_POST['office_lat'];
+    $lng = $_POST['office_lng'];
+    if (is_numeric($lat) && is_numeric($lng) && $lat >= -90 && $lat <= 90 && $lng >= -180 && $lng <= 180) {
+        $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value, description) VALUES ('office_lat', ?, 'Company Office Latitude') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)")->execute([$lat]);
+        $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value, description) VALUES ('office_lng', ?, 'Company Office Longitude') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)")->execute([$lng]);
+        $message = "Office coordinates updated to $lat, $lng.";
+        $message_type = 'success';
+    } else {
+        $message = "Invalid coordinates. Latitude must be -90 to 90, longitude -180 to 180.";
+        $message_type = 'error';
+    }
+}
+
+// Handle radius save
+if (isset($_POST['save_radius'])) {
+    $radius = (int)$_POST['office_radius'];
+    if ($radius >= 50 && $radius <= 5000) {
+        $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value, description) VALUES ('office_radius', ?, 'Office GPS radius in meters') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
+        $stmt->execute([$radius]);
+        $message = "Office radius set to $radius meters.";
+        $message_type = 'success';
+    } else {
+        $message = "Radius must be between 50 and 5000 meters.";
+        $message_type = 'error';
+    }
+}
+
+// Handle GPS validation toggle
+if (isset($_POST['save_gps_toggle'])) {
+    $enabled = isset($_POST['enable_gps_validation']) ? 1 : 0;
+    $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value, description) VALUES ('enable_gps_validation', ?, 'Enable/disable GPS validation for check-in') ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
+    $stmt->execute([$enabled]);
+    $message = "GPS validation " . ($enabled ? 'enabled' : 'disabled') . ".";
+    $message_type = 'success';
+}
+
+// Fetch current values
 $stmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'leave_rolling_months'");
 $current_rolling = (int)($stmt->fetchColumn() ?: 3);
+
+$stmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'office_ip'");
+$current_ip = $stmt->fetchColumn() ?: '192.168.1.100';
+
+$stmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'office_lat'");
+$current_lat = $stmt->fetchColumn() ?: '3.141592';
+
+$stmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'office_lng'");
+$current_lng = $stmt->fetchColumn() ?: '101.686530';
+
+$stmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'office_radius'");
+$current_radius = (int)($stmt->fetchColumn() ?: 200);
+
+$stmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'enable_ip_validation'");
+$ip_validation_enabled = (int)($stmt->fetchColumn() ?: 0);
+
+$stmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'enable_gps_validation'");
+$gps_validation_enabled = (int)($stmt->fetchColumn() ?: 0);
 ?>
 <!doctype html>
 <html lang="en">
@@ -145,7 +226,112 @@ $current_rolling = (int)($stmt->fetchColumn() ?: 3);
                 <?php endforeach; ?>
               </div>
             </div>
-            <button type="submit" name="save_settings" class="btn btn-primary" style="width:100%;margin-top:8px;">💾 Save Settings</button>
+            <button type="submit" name="save_leave" class="btn btn-primary" style="width:100%;margin-top:8px;">💾 Save Window</button>
+          </form>
+        </section>
+
+        <!-- Office IP Section -->
+        <section class="card">
+          <div class="card-header">
+            <span class="card-title">🌐 Office IP Address</span>
+            <span class="current-value">Current: <?= htmlspecialchars($current_ip) ?></span>
+          </div>
+          <form method="POST">
+            <div class="form-group">
+              <label class="form-label">Company Wi-Fi Public IP</label>
+              <p style="font-size:12px;color:var(--muted);margin-bottom:4px;">Used for IP-based attendance validation. Employees must be on this network to check in.</p>
+              <input type="text" name="office_ip" class="form-input"
+                     value="<?= htmlspecialchars($current_ip) ?>"
+                     placeholder="e.g. 192.168.1.100"
+                     pattern="^(\d{1,3}\.){3}\d{1,3}$"
+                     title="Enter a valid IPv4 address (e.g. 192.168.1.100)"
+                     required>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:8px;">
+              <button type="submit" name="save_ip" class="btn btn-primary" style="flex:1;">💾 Update IP</button>
+              <button type="button" class="btn" style="background:var(--border-subtle);color:var(--fg-secondary);"
+                      onclick="document.querySelector('[name=office_ip]').value = '<?= htmlspecialchars($current_ip) ?>';">↺ Reset</button>
+            </div>
+          </form>
+        </section>
+
+        <!-- Office GPS Section with Interactive Map -->
+        <section class="card">
+          <div class="card-header">
+            <span class="card-title">📍 Office Location</span>
+            <span class="current-value">📍 <?= htmlspecialchars($current_lat) ?>, <?= htmlspecialchars($current_lng) ?></span>
+          </div>
+          <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+          <!-- Address Search -->
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="search-input" class="form-input" placeholder="Search address, company name, or place…" style="flex:1;">
+            <button type="button" id="search-btn" class="btn btn-primary" style="white-space:nowrap;">🔍 Search</button>
+            <button type="button" id="locate-btn" class="btn" style="background:var(--border-subtle);color:var(--fg-secondary);white-space:nowrap;" title="Use my current location">📍 My Location</button>
+          </div>
+          <div id="search-status" style="font-size:11px;color:var(--muted);min-height:16px;"></div>
+          <!-- Map -->
+          <div id="map" style="height:320px;border-radius:var(--radius-md);border:1.5px solid var(--border-subtle);z-index:1;"></div>
+          <p style="font-size:10px;color:var(--muted);">Search an address, click the map, or use My Location to set the office coordinates. Map tiles © OpenStreetMap.</p>
+          <form method="POST" id="gps-form">
+            <input type="hidden" name="office_lat" id="lat-input" value="<?= htmlspecialchars($current_lat) ?>">
+            <input type="hidden" name="office_lng" id="lng-input" value="<?= htmlspecialchars($current_lng) ?>">
+            <div class="form-row" style="margin-top:8px;">
+              <div class="form-group">
+                <label class="form-label">Latitude</label>
+                <input type="text" class="form-input" id="lat-display" value="<?= htmlspecialchars($current_lat) ?>" readonly>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Longitude</label>
+                <input type="text" class="form-input" id="lng-display" value="<?= htmlspecialchars($current_lng) ?>" readonly>
+              </div>
+            </div>
+            <button type="submit" name="save_gps" class="btn btn-primary" style="width:100%;margin-top:8px;">💾 Save Coordinates</button>
+          </form>
+        </section>
+
+        <!-- Radius + GPS Toggle -->
+        <section class="card">
+          <div class="card-header">
+            <span class="card-title">📍 GPS Validation</span>
+            <span class="current-value" style="background:<?= $gps_validation_enabled ? 'oklch(92% 0.06 148)' : 'oklch(92% 0.003 250)' ?>;color:<?= $gps_validation_enabled ? 'oklch(36% 0.1 148)' : 'oklch(48% 0.005 250)' ?>;"><?= $gps_validation_enabled ? 'Enabled' : 'Disabled' ?></span>
+          </div>
+          <form method="POST">
+            <div class="form-group">
+              <label class="form-label">Office Radius (meters)</label>
+              <p style="font-size:12px;color:var(--muted);margin-bottom:4px;">Employees must be within this distance from the office to check in. Range: 50–5000 meters.</p>
+              <input type="number" name="office_radius" class="form-input" value="<?= $current_radius ?>" min="50" max="5000" required>
+            </div>
+            <button type="submit" name="save_radius" class="btn btn-primary" style="width:100%;margin-top:4px;">💾 Save Radius</button>
+          </form>
+          <form method="POST" style="margin-top:8px;">
+            <label class="radio-item <?= $gps_validation_enabled ? 'selected' : '' ?>" style="cursor:pointer;">
+              <input type="checkbox" name="enable_gps_validation" <?= $gps_validation_enabled ? 'checked' : '' ?>
+                     onchange="this.closest('form').submit(); this.closest('form').querySelector('[name=save_gps_toggle]').click();" style="display:none;">
+              <span class="ri-label" style="flex:1;">Require GPS Location for Check-In</span>
+              <span class="ri-desc"><?= $gps_validation_enabled ? 'ON — employees must be within ' . $current_radius . 'm' : 'OFF — any location allowed (dev mode)' ?></span>
+            </label>
+            <button type="submit" name="save_gps_toggle" class="btn btn-primary" style="display:none;"></button>
+          </form>
+        </section>
+
+        <!-- IP Validation Toggle -->
+        <section class="card">
+          <div class="card-header">
+            <span class="card-title">🛡️ IP Validation</span>
+            <span class="current-value" style="background:<?= $ip_validation_enabled ? 'oklch(92% 0.06 148)' : 'oklch(92% 0.003 250)' ?>;color:<?= $ip_validation_enabled ? 'oklch(36% 0.1 148)' : 'oklch(48% 0.005 250)' ?>;"><?= $ip_validation_enabled ? 'Enabled' : 'Disabled' ?></span>
+          </div>
+          <form method="POST">
+            <label class="radio-item <?= $ip_validation_enabled ? 'selected' : '' ?>" style="cursor:pointer;">
+              <input type="checkbox" name="enable_ip_validation" <?= $ip_validation_enabled ? 'checked' : '' ?>
+                     onchange="this.closest('form').submit(); this.closest('form').querySelector('[name=save_validation]').click();" style="display:none;">
+              <span class="ri-label" style="flex:1;">Require Office IP for Check-In</span>
+              <span class="ri-desc"><?= $ip_validation_enabled ? 'ON — employees must be on office WiFi' : 'OFF — any IP allowed (dev mode)' ?></span>
+            </label>
+            <p style="font-size:10px;color:var(--muted);margin-top:6px;">
+              When enabled, employee check-ins are blocked unless their IP matches the Office IP above.
+              Localhost (<code>127.0.0.1</code>, <code>::1</code>) always bypasses validation regardless of this setting.
+            </p>
+            <button type="submit" name="save_validation" class="btn btn-primary" style="display:none;"></button>
           </form>
         </section>
       </div>
@@ -159,7 +345,84 @@ $current_rolling = (int)($stmt->fetchColumn() ?: 3);
     <a href="../logout.php"><span class="nav-icon">🚪</span>Logout</a>
   </nav>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
+    // --- Shared helpers ---
+    const $ = (s) => document.getElementById(s);
+    const officeLat = <?= (float)$current_lat ?>;
+    const officeLng = <?= (float)$current_lng ?>;
+
+    // --- Leaflet Map ---
+    const map = L.map('map').setView([officeLat, officeLng], 16);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap', maxZoom: 19
+    }).addTo(map);
+    let marker = L.marker([officeLat, officeLng]).addTo(map).bindPopup('Office Location').openPopup();
+
+    function updateCoords(lat, lng) {
+      marker.setLatLng([lat, lng]);
+      $('lat-input').value = lat.toFixed(6);
+      $('lng-input').value = lng.toFixed(6);
+      $('lat-display').value = lat.toFixed(6);
+      $('lng-display').value = lng.toFixed(6);
+      map.setView([lat, lng], map.getZoom());
+      marker.bindPopup('Office Location').openPopup();
+    }
+
+    // Click anywhere on map to set location
+    map.on('click', function(e) { updateCoords(e.latlng.lat, e.latlng.lng); });
+
+    // --- Address Search (Nominatim / OpenStreetMap) ---
+    function setStatus(text, isError) {
+      $('search-status').textContent = text;
+      $('search-status').style.color = isError ? 'var(--red-status)' : 'var(--muted)';
+    }
+
+    $('search-btn').addEventListener('click', function() {
+      const query = $('search-input').value.trim();
+      if (!query) { setStatus('Please enter an address or place name.', true); return; }
+      setStatus('Searching…', false);
+      fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(query))
+        .then(r => r.json())
+        .then(results => {
+          if (results.length === 0) {
+            setStatus('Address not found. Try a more specific search.', true);
+          } else {
+            const r = results[0];
+            updateCoords(parseFloat(r.lat), parseFloat(r.lon));
+            setStatus('Found: ' + r.display_name, false);
+          }
+        })
+        .catch(function() {
+          setStatus('Search request failed. Check your internet connection.', true);
+        });
+    });
+
+    // Enter key triggers search
+    $('search-input').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') { e.preventDefault(); $('search-btn').click(); }
+    });
+
+    // --- Use My Current Location ---
+    $('locate-btn').addEventListener('click', function() {
+      if (!navigator.geolocation) {
+        setStatus('Geolocation is not supported by your browser.', true); return;
+      }
+      setStatus('Getting your location…', false);
+      navigator.geolocation.getCurrentPosition(
+        function(pos) {
+          updateCoords(pos.coords.latitude, pos.coords.longitude);
+          setStatus('Location set to your current position.', false);
+        },
+        function(err) {
+          const msgs = {1:'Permission denied. Check browser settings.',2:'Position unavailable.',3:'Request timed out.'};
+          setStatus(msgs[err.code] || 'Geolocation failed.', true);
+        },
+        { timeout: 10000, enableHighAccuracy: true }
+      );
+    });
+
+    // --- Radio items ---
     document.querySelectorAll('.radio-item').forEach(item => {
       item.addEventListener('click', function() { this.querySelector('input[type="radio"]').checked = true; });
     });

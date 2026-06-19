@@ -46,6 +46,69 @@ if ($action === 'check_in') {
         exit();
     }
 
+    // 1d. IP address collection (always recorded, validation is opt-in)
+    //     $_SERVER['REMOTE_ADDR'] gives the client IP connecting to the server.
+    //     On localhost/XAMPP this returns '127.0.0.1' or '::1'.
+    //     On production this returns the employee's network IP.
+    $employee_ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+
+    // Check if IP validation is enabled in system_settings
+    $stmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'enable_ip_validation'");
+    $ip_validation_enabled = (int)($stmt->fetchColumn() ?: 0);
+
+    // Localhost IPs always bypass validation (development/testing)
+    $is_localhost = in_array($employee_ip, ['127.0.0.1', '::1', 'localhost']);
+
+    if ($ip_validation_enabled && !$is_localhost) {
+        $stmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'office_ip'");
+        $office_ip = $stmt->fetchColumn() ?: '192.168.1.100';
+
+        if ($employee_ip !== $office_ip) {
+            echo json_encode([
+                'success' => false,
+                'message' => "IP validation failed. Your IP ($employee_ip) does not match the office IP. Check-in blocked."
+            ]);
+            exit();
+        }
+    }
+
+    // 1e. GPS validation (opt-in, requires browser geolocation)
+    $employee_lat = $data['latitude'] ?? null;
+    $employee_lng = $data['longitude'] ?? null;
+
+    if ($employee_lat !== null && $employee_lng !== null) {
+        // Check if GPS validation is enabled
+        $stmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'enable_gps_validation'");
+        $gps_validation_enabled = (int)($stmt->fetchColumn() ?: 0);
+
+        if ($gps_validation_enabled) {
+            $stmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'office_lat'");
+            $office_lat = (float)($stmt->fetchColumn() ?: 3.141592);
+            $stmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'office_lng'");
+            $office_lng = (float)($stmt->fetchColumn() ?: 101.686530);
+            $stmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'office_radius'");
+            $office_radius = (int)($stmt->fetchColumn() ?: 200);
+
+            // Haversine distance calculation
+            $earth_radius = 6371000; // meters
+            $dLat = deg2rad($office_lat - $employee_lat);
+            $dLng = deg2rad($office_lng - $employee_lng);
+            $a = sin($dLat / 2) * sin($dLat / 2) +
+                 cos(deg2rad($employee_lat)) * cos(deg2rad($office_lat)) *
+                 sin($dLng / 2) * sin($dLng / 2);
+            $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+            $distance = round($earth_radius * $c);
+
+            if ($distance > $office_radius) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => "GPS validation failed. You are $distance meters from the office (allowed: $office_radius meters). Check-in blocked."
+                ]);
+                exit();
+            }
+        }
+    }
+
     // 2. Determine Time & Base Status
     $status = 'absent';
     $base_points = -2;
@@ -127,9 +190,9 @@ if ($action === 'check_in') {
     try {
         $pdo->beginTransaction();
 
-        // Save Attendance
-        $stmt = $pdo->prepare("INSERT INTO attendance (user_id, date, check_in_time, status, points_earned) VALUES (?, ?, ?, ?, ?)");
-        $stmt->execute([$user_id, $date_today, $time_now, $status, $total_points]);
+        // Save Attendance (includes IP + GPS for audit trail)
+        $stmt = $pdo->prepare("INSERT INTO attendance (user_id, date, check_in_time, status, points_earned, ip_address, location_lat, location_lng) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$user_id, $date_today, $time_now, $status, $total_points, $employee_ip, $employee_lat, $employee_lng]);
 
         // Save Ledger
         $stmt = $pdo->prepare("INSERT INTO point_transactions (user_id, amount, description) VALUES (?, ?, ?)");
