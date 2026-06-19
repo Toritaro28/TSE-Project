@@ -139,6 +139,24 @@ if ($action === 'check_in') {
         $stmt = $pdo->prepare("UPDATE users SET total_points = total_points + ?, current_streak = ?, plant_current_stage = ?, plant_highest_stage = ?, plant_status = ? WHERE id = ?");
         $stmt->execute([$total_points, $current_streak, $current_stage, $highest_stage, $plant_status, $user_id]);
 
+        // Award badges (INSERT IGNORE prevents duplicates; try/catch handles missing table)
+        try {
+            if ($current_streak >= 5) {
+                $pdo->prepare("INSERT IGNORE INTO badges (user_id, badge_key, badge_name, badge_icon) VALUES (?, 'streak_5', '5-Day Streak Starter', '🔥')")->execute([$user_id]);
+            }
+            if ($badge_unlocked) {
+                $pdo->prepare("INSERT IGNORE INTO badges (user_id, badge_key, badge_name, badge_icon) VALUES (?, 'iron_man_30', '30-Day Iron Man', '🛡️')")->execute([$user_id]);
+            }
+            if ($current_stage >= 4) {
+                $pdo->prepare("INSERT IGNORE INTO badges (user_id, badge_key, badge_name, badge_icon) VALUES (?, 'tree_stage_4', 'Bloom Seeker', '🌸')")->execute([$user_id]);
+            }
+            if ($current_stage >= 7) {
+                $pdo->prepare("INSERT IGNORE INTO badges (user_id, badge_key, badge_name, badge_icon) VALUES (?, 'tree_stage_7', 'World Tree Legend', '🌍')")->execute([$user_id]);
+            }
+        } catch (PDOException $e) {
+            // badges table not created yet — skip silently
+        }
+
         $pdo->commit();
 
         echo json_encode([

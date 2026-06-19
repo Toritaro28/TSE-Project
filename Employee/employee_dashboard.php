@@ -118,6 +118,16 @@ $attendance_rate = $total_tracked > 0 ? round(($present_days / $total_tracked) *
 $stmt = $pdo->query("SELECT COUNT(*) FROM reward_items WHERE is_active = 1 AND stock_quantity > 0");
 $available_rewards = $stmt->fetchColumn();
 
+// Fetch earned badges (table may not exist yet)
+$earned_badges = [];
+try {
+    $stmt = $pdo->prepare("SELECT badge_name, badge_icon, earned_at FROM badges WHERE user_id = ? ORDER BY earned_at DESC");
+    $stmt->execute([$user_id]);
+    $earned_badges = $stmt->fetchAll();
+} catch (PDOException $e) {
+    // badges table not created yet — skip silently
+}
+
 // ============================================================
 // 6. Mini Calendar Data (calendar preview card)
 // ============================================================
@@ -504,6 +514,29 @@ while ($row = $stmt->fetch()) {
             </div>
           </a>
         </div>
+
+        <!-- ==================================================
+             BADGE WALL
+             ================================================== -->
+        <?php if (count($earned_badges) > 0): ?>
+        <div class="glass-card">
+          <div class="card-header">
+            <div class="card-title">🏆 Earned Badges</div>
+            <span style="font-size:11px;color:var(--muted);"><?= count($earned_badges) ?> badge<?= count($earned_badges) !== 1 ? 's' : '' ?></span>
+          </div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <?php foreach ($earned_badges as $badge): ?>
+            <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:var(--radius-sm);background:oklch(94% 0.04 82 / 0.3);border:1px solid oklch(84% 0.1 82 / 0.4);">
+              <span style="font-size:28px;"><?= htmlspecialchars($badge['badge_icon']) ?></span>
+              <div>
+                <div style="font-size:13px;font-weight:700;color:var(--fg);"><?= htmlspecialchars($badge['badge_name']) ?></div>
+                <div style="font-size:10px;color:var(--muted);"><?= date('M d, Y', strtotime($badge['earned_at'])) ?></div>
+              </div>
+            </div>
+            <?php endforeach; ?>
+          </div>
+        </div>
+        <?php endif; ?>
 
         <!-- ==================================================
              ROW 3 — CALENDAR PREVIEW
