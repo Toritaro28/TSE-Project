@@ -8,7 +8,8 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 }
 
 $message = '';
-$message_type = ''; // 'success' or 'error' for toast styling
+$message_type = '';
+$active_page = 'approvals';
 
 // ============================================================
 // STATS QUERIES (new — to support the dashboard stat cards)
@@ -147,23 +148,13 @@ $requests_json = json_encode(array_values($requests_enriched));
       --surface-glass-hover: rgba(255, 255, 255, 0.72);
       --surface-solid: #ffffff;
       --surface-raised: rgba(255, 255, 255, 0.85);
-      --fg: oklch(16% 0.018 252);
-      --fg-secondary: oklch(36% 0.022 250);
-      --muted: oklch(53% 0.016 250);
-      --border-glass: rgba(255, 255, 255, 0.38);
-      --border-subtle: rgba(0, 0, 0, 0.055);
-
-      --accent: oklch(56% 0.19 148);
-      --accent-soft: oklch(74% 0.14 148);
-      --accent-dark: oklch(48% 0.16 148);
-      --accent-glow: oklch(62% 0.21 148 / 0.3);
-      --gold: oklch(70% 0.19 82);
-
-      --green-status: oklch(58% 0.17 142);
-      --yellow-status: oklch(68% 0.15 85);
-      --red-status: oklch(53% 0.22 22);
-      --blue-info: oklch(56% 0.16 255);
-      --purple-accent: oklch(53% 0.18 310);
+      --fg: oklch(16% 0.018 252); --fg-secondary: oklch(36% 0.022 250); --muted: oklch(53% 0.016 250);
+      --border-glass: rgba(255, 255, 255, 0.38); --border-subtle: rgba(0, 0, 0, 0.055);
+      --accent: oklch(56% 0.19 148); --accent-soft: oklch(74% 0.14 148); --accent-dark: oklch(48% 0.16 148);
+      --accent-glow: oklch(62% 0.21 148 / 0.3); --gold: oklch(70% 0.19 82);
+      --green-status: oklch(58% 0.17 142); --yellow-status: oklch(68% 0.15 85); --red-status: oklch(53% 0.22 22);
+      --blue-info: oklch(56% 0.16 255); --purple-accent: oklch(53% 0.18 310);
+      --sidebar-bg: oklch(13% 0.02 252); --sidebar-fg: oklch(84% 0.006 250); --sidebar-muted: oklch(60% 0.016 250);
 
       --radius-sm: 10px;
       --radius-md: 16px;
@@ -182,25 +173,32 @@ $requests_json = json_encode(array_values($requests_enriched));
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body {
-      width: 100%; min-height: 100%;
-      font-family: var(--font-body);
-      color: var(--fg);
-      background: var(--bg);
-      -webkit-font-smoothing: antialiased;
-      overflow-x: hidden;
-    }
+    html, body { width: 100%; height: 100%; font-family: var(--font-body); color: var(--fg); background: var(--bg); -webkit-font-smoothing: antialiased; overflow: hidden; }
+
+    /* ---- App Shell ---- */
+    .app { display: flex; height: 100vh; width: 100%; }
+
+    /* ---- Sidebar ---- */
+    .sidebar { width: 250px; min-width: 250px; height: 100%; background: var(--sidebar-bg); color: var(--sidebar-fg); display: flex; flex-direction: column; padding: 26px 18px 18px; gap: 5px; z-index: 10; border-right: 1px solid rgba(255,255,255,0.06); }
+    .sidebar-brand { display: flex; align-items: center; gap: 11px; padding: 0 8px 24px; font-family: var(--font-display); font-size: 19px; font-weight: 700; letter-spacing: -0.02em; color: #fff; }
+    .sidebar-brand .logo-icon { width: 38px; height: 38px; border-radius: 11px; background: linear-gradient(135deg, var(--accent), oklch(46% 0.15 158)); display: grid; place-items: center; font-size: 20px; }
+    .sidebar-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+    .sidebar-nav .nav-section { font-size: 10px; text-transform: uppercase; letter-spacing: 0.09em; color: var(--sidebar-muted); padding: 14px 10px 5px; font-weight: 600; }
+    .sidebar-nav a { display: flex; align-items: center; gap: 9px; width: 100%; padding: 10px 10px; border: none; border-radius: 9px; background: transparent; color: var(--sidebar-fg); font: 13px/1.4 var(--font-body); cursor: pointer; transition: background 0.15s; text-align: left; letter-spacing: -0.01em; text-decoration: none; }
+    .sidebar-nav a:hover { background: rgba(255,255,255,0.055); }
+    .sidebar-nav a.active { background: rgba(255,255,255,0.1); color: #fff; font-weight: 600; }
+    .sidebar-nav a .nav-icon { font-size: 16px; width: 22px; text-align: center; flex-shrink: 0; }
+    .sidebar-user { display: flex; align-items: center; gap: 10px; padding: 12px 8px; border-top: 1px solid rgba(255,255,255,0.07); margin-top: auto; }
+    .sidebar-user .avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), oklch(48% 0.13 165)); display: grid; place-items: center; font-size: 14px; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .sidebar-user .user-name { font-size: 13px; font-weight: 600; color: #fff; }
+    .sidebar-user .user-role { font-size: 10px; color: var(--sidebar-muted); }
+
+    /* ---- Main ---- */
+    .main { flex: 1; overflow-y: auto; overflow-x: hidden; background: var(--bg-gradient, radial-gradient(ellipse at 70% 0%, oklch(90% 0.04 170 / 0.18), oklch(97% 0.004 245) 55%)); display: flex; flex-direction: column; }
+    .main-inner { padding: 24px 30px 36px; display: flex; flex-direction: column; gap: 20px; max-width: 1200px; width: 100%; }
 
     /* ---- Page shell ---- */
-    .page {
-      max-width: 100%;
-      margin: 0 auto;
-      padding: 0 16px 32px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      min-height: 100vh;
-    }
+    .page { width: 100%; display: flex; flex-direction: column; gap: 16px; }
 
     /* ---- Top bar ---- */
     .topbar {
@@ -683,9 +681,14 @@ $requests_json = json_encode(array_values($requests_enriched));
     .toast.show { transform: translateX(-50%) translateY(0); }
     .toast.error { border-color: var(--red-status); }
 
+    /* Bottom nav (mobile) */
+    .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 30; height: 64px; background: oklch(98% 0.003 250 / 0.92); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border-top: 1px solid rgba(0,0,0,0.06); align-items: center; justify-content: space-around; padding: 0 8px; padding-bottom: env(safe-area-inset-bottom, 0px); }
+    .bottom-nav a { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 10px; border: none; background: none; font: 10px/1 var(--font-body); color: var(--muted); cursor: pointer; transition: color 0.15s; font-weight: 500; text-decoration: none; }
+    .bottom-nav a .nav-icon { font-size: 20px; line-height: 1; }
+    .bottom-nav a.active { color: var(--accent); font-weight: 700; }
+
     /* Responsive */
     @media (min-width: 640px) {
-      .page { padding: 0 20px 32px; }
       .topbar { padding: 16px 0 12px; }
       .topbar .title { font-size: 20px; }
       .stats-grid { grid-template-columns: repeat(4, 1fr); gap: 12px; }
@@ -694,7 +697,6 @@ $requests_json = json_encode(array_values($requests_enriched));
       table.data-table { font-size: 13px; min-width: 720px; }
     }
     @media (min-width: 1024px) {
-      .page { max-width: 1200px; padding: 0 32px 48px; gap: 22px; }
       .card { padding: 24px 28px; }
       .card-title { font-size: 17px; }
       .stats-grid { gap: 16px; }
@@ -703,6 +705,8 @@ $requests_json = json_encode(array_values($requests_enriched));
       table.data-table { font-size: 14px; }
       table.data-table thead th { font-size: 11px; }
     }
+    @media (max-width: 800px) { .sidebar { width: 210px; min-width: 210px; } .main-inner { padding: 16px 12px 80px; } }
+    @media (max-width: 660px) { .sidebar { display: none; } .bottom-nav { display: flex; } .main-inner { padding: 14px 10px 80px; } }
 
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
@@ -718,13 +722,17 @@ $requests_json = json_encode(array_values($requests_enriched));
 </head>
 <body>
 
-  <!-- ==========================================================
-       TOAST
-       ========================================================== -->
   <div class="toast" id="toast" style="display:none;">
     <span id="toast-icon">✅</span>
     <span id="toast-msg"></span>
   </div>
+
+  <div class="app">
+    <?php include 'boss_sidebar.php'; ?>
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="page">
 
   <!-- ==========================================================
        APPROVAL CONFIRMATION MODAL
@@ -879,7 +887,18 @@ $requests_json = json_encode(array_values($requests_enriched));
       </div>
     </section>
 
-  </div>
+        </div><!-- /.page -->
+      </div><!-- /.main-inner -->
+    </main>
+  </div><!-- /.app -->
+
+  <!-- Mobile bottom nav -->
+  <nav class="bottom-nav">
+    <a href="admin_dashboard.php" class="active"><span class="nav-icon">📋</span>Approvals</a>
+    <a href="master_calendar.php"><span class="nav-icon">📅</span>Calendar</a>
+    <a href="store_admin.php"><span class="nav-icon">🎁</span>Store</a>
+    <a href="../logout.php"><span class="nav-icon">🚪</span>Logout</a>
+  </nav>
 
   <!-- ==========================================================
        SCRIPTS

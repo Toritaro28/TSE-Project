@@ -7,6 +7,7 @@ $nav_items = [
     ['page' => 'dashboard', 'href' => 'employee_dashboard.php', 'icon' => '◈', 'label' => 'Dashboard'],
     ['page' => 'leave',     'href' => 'leave.php',             'icon' => '📅', 'label' => 'Leave & Calendar'],
     ['page' => 'rewards',   'href' => 'rewards_store.php',      'icon' => '🎁', 'label' => 'Rewards Store'],
+    ['page' => 'history',   'href' => 'points_history.php',     'icon' => '📊', 'label' => 'Points History'],
 ];
 ?>
 <aside class="sidebar">

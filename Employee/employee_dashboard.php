@@ -70,6 +70,13 @@ $check_out_time = ($attendance && $attendance['check_out_time']) ? date('h:i A',
 $attendance_status = $attendance ? ucfirst(str_replace('_', ' ', $attendance['status'])) : 'Not Checked In';
 $today_points = $attendance ? $attendance['points_earned'] : 0;
 
+// Check if employee is on approved leave today
+$stmt = $pdo->prepare("SELECT id, leave_type FROM leave_requests WHERE user_id = ? AND status = 'approved' AND start_date <= ? AND end_date >= ? LIMIT 1");
+$stmt->execute([$user_id, $date_today, $date_today]);
+$on_leave_today = $stmt->fetch();
+$is_on_approved_leave = $on_leave_today ? true : false;
+$on_leave_type = $on_leave_today ? $on_leave_today['leave_type'] : '';
+
 // ============================================================
 // 5. Quick Summary Data
 // ============================================================
@@ -415,10 +422,10 @@ while ($row = $stmt->fetch()) {
           <div class="glass-card col-span-2">
             <div class="card-header">
               <div class="card-title">Today's Attendance</div>
-              <span style="font-size:12px;font-weight:600;color:<?= $has_checked_in ? 'var(--green-status)' : 'var(--red-status)' ?>;"><?= $has_checked_in ? ($has_checked_out ? '✅ Shift Completed' : '✅ Checked In') : '⚠️ Not Checked In' ?></span>
+              <span style="font-size:12px;font-weight:600;color:<?= $has_checked_in ? 'var(--green-status)' : ($is_on_approved_leave ? 'var(--blue-info)' : 'var(--red-status)') ?>;"><?= $has_checked_in ? ($has_checked_out ? '✅ Shift Completed' : '✅ Checked In') : ($is_on_approved_leave ? '🏖️ On Approved Leave' : '⚠️ Not Checked In') ?></span>
             </div>
             <div class="check-actions">
-              <button class="btn-check btn-check-in" id="btn-check-in" <?= $has_checked_in ? 'disabled' : '' ?>><span class="btn-icon">✓</span> Check In<span class="btn-sub"><?= $check_in_time ?></span></button>
+              <button class="btn-check btn-check-in" id="btn-check-in" <?= ($has_checked_in || $is_on_approved_leave) ? 'disabled' : '' ?>><span class="btn-icon">✓</span> Check In<span class="btn-sub"><?= $is_on_approved_leave ? 'On Leave Today' : $check_in_time ?></span></button>
               <button class="btn-check btn-check-out" id="btn-check-out" <?= (!$has_checked_in || $has_checked_out) ? 'disabled' : '' ?>><span class="btn-icon">↩</span> Check Out<span class="btn-sub"><?= $check_out_time ?></span></button>
             </div>
             <div class="check-status-row">

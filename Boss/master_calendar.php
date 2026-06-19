@@ -7,6 +7,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     exit();
 }
 
+$active_page = 'calendar';
 $month = isset($_GET['m']) ? $_GET['m'] : date('m');
 $year = isset($_GET['y']) ? $_GET['y'] : date('Y');
 $days_in_month = cal_days_in_month(CAL_GREGORIAN, $month, $year);
@@ -103,21 +104,16 @@ $month_label = date('F Y', mktime(0, 0, 0, $month, 1, $year));
        DESIGN TOKENS — LeafPoint System
        ============================================================ */
     :root {
-      --bg: oklch(97% 0.005 245);
+      --bg: oklch(96.5% 0.006 245);
       --bg-gradient: radial-gradient(ellipse at 50% 0%, oklch(90% 0.04 170 / 0.2), oklch(97% 0.004 245) 55%);
       --surface-glass: rgba(255, 255, 255, 0.55);
       --surface-glass-hover: rgba(255, 255, 255, 0.74);
       --surface-solid: #ffffff;
-      --fg: oklch(16% 0.018 252);
-      --fg-secondary: oklch(38% 0.022 250);
-      --muted: oklch(54% 0.016 250);
-      --border-glass: rgba(255, 255, 255, 0.4);
-      --border-subtle: rgba(0, 0, 0, 0.055);
-
-      --accent: oklch(56% 0.19 148);
-      --accent-soft: oklch(74% 0.14 148);
-      --accent-glow: oklch(62% 0.21 148 / 0.35);
-      --gold: oklch(70% 0.19 82);
+      --fg: oklch(16% 0.018 252); --fg-secondary: oklch(38% 0.022 250); --muted: oklch(54% 0.016 250);
+      --border-glass: rgba(255, 255, 255, 0.4); --border-subtle: rgba(0, 0, 0, 0.055);
+      --accent: oklch(56% 0.19 148); --accent-soft: oklch(74% 0.14 148);
+      --accent-glow: oklch(62% 0.21 148 / 0.35); --gold: oklch(70% 0.19 82);
+      --sidebar-bg: oklch(13% 0.02 252); --sidebar-fg: oklch(84% 0.006 250); --sidebar-muted: oklch(60% 0.016 250);
 
       --green-present: oklch(62% 0.18 145);
       --red-absent: oklch(55% 0.22 22);
@@ -139,24 +135,28 @@ $month_label = date('F Y', mktime(0, 0, 0, $month, 1, $year));
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body {
-      width: 100%; min-height: 100%;
-      font-family: var(--font-body);
-      color: var(--fg);
-      background: var(--bg);
-      -webkit-font-smoothing: antialiased;
-      overflow-x: hidden;
-    }
+    html, body { width: 100%; height: 100%; font-family: var(--font-body); color: var(--fg); background: var(--bg); -webkit-font-smoothing: antialiased; overflow: hidden; }
 
-    .page {
-      max-width: 100%;
-      margin: 0 auto;
-      padding: 0 16px 32px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      min-height: 100vh;
-    }
+    .app { display: flex; height: 100vh; width: 100%; }
+
+    .sidebar { width: 250px; min-width: 250px; height: 100%; background: var(--sidebar-bg); color: var(--sidebar-fg); display: flex; flex-direction: column; padding: 26px 18px 18px; gap: 5px; z-index: 10; border-right: 1px solid rgba(255,255,255,0.06); }
+    .sidebar-brand { display: flex; align-items: center; gap: 11px; padding: 0 8px 24px; font-family: var(--font-display); font-size: 19px; font-weight: 700; letter-spacing: -0.02em; color: #fff; }
+    .sidebar-brand .logo-icon { width: 38px; height: 38px; border-radius: 11px; background: linear-gradient(135deg, var(--accent), oklch(46% 0.15 158)); display: grid; place-items: center; font-size: 20px; }
+    .sidebar-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+    .sidebar-nav .nav-section { font-size: 10px; text-transform: uppercase; letter-spacing: 0.09em; color: var(--sidebar-muted); padding: 14px 10px 5px; font-weight: 600; }
+    .sidebar-nav a { display: flex; align-items: center; gap: 9px; width: 100%; padding: 10px 10px; border: none; border-radius: 9px; background: transparent; color: var(--sidebar-fg); font: 13px/1.4 var(--font-body); cursor: pointer; transition: background 0.15s; text-align: left; letter-spacing: -0.01em; text-decoration: none; }
+    .sidebar-nav a:hover { background: rgba(255,255,255,0.055); }
+    .sidebar-nav a.active { background: rgba(255,255,255,0.1); color: #fff; font-weight: 600; }
+    .sidebar-nav a .nav-icon { font-size: 16px; width: 22px; text-align: center; flex-shrink: 0; }
+    .sidebar-user { display: flex; align-items: center; gap: 10px; padding: 12px 8px; border-top: 1px solid rgba(255,255,255,0.07); margin-top: auto; }
+    .sidebar-user .avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), oklch(48% 0.13 165)); display: grid; place-items: center; font-size: 14px; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .sidebar-user .user-name { font-size: 13px; font-weight: 600; color: #fff; }
+    .sidebar-user .user-role { font-size: 10px; color: var(--sidebar-muted); }
+
+    .main { flex: 1; overflow-y: auto; overflow-x: hidden; background: var(--bg-gradient, var(--bg)); display: flex; flex-direction: column; }
+    .main-inner { padding: 24px 30px 36px; display: flex; flex-direction: column; gap: 20px; max-width: 1300px; width: 100%; }
+
+    .page { width: 100%; display: flex; flex-direction: column; gap: 16px; }
 
     /* ---- Top bar ---- */
     .topbar {
@@ -344,62 +344,78 @@ $month_label = date('F Y', mktime(0, 0, 0, $month, 1, $year));
     .cal-cell {
       border-radius: var(--radius-sm);
       display: flex; flex-direction: column;
-      padding: 4px; gap: 2px;
-      min-height: 110px;
+      padding: 6px 8px; gap: 3px;
+      min-height: 80px;
       background: rgba(0,0,0,0.015);
       border: 1.5px solid transparent;
       transition: all 0.2s;
       overflow: hidden;
+      cursor: pointer;
     }
     .cal-cell:hover {
       border-color: var(--accent-soft);
       box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-      z-index: 2;
-      position: relative;
+      z-index: 2; position: relative;
+      background: rgba(0,0,0,0.03);
     }
     .cal-cell.today {
       border-color: var(--accent);
       box-shadow: 0 0 0 3px oklch(56% 0.19 148 / 0.15);
     }
     .cal-cell.has-holiday {
-      background: oklch(92% 0.06 310 / 0.3);
+      background: oklch(92% 0.06 310 / 0.25);
       border-color: oklch(82% 0.07 310 / 0.3);
     }
     .cal-cell .day-num {
       font-size: 13px; font-weight: 600; text-align: right;
-      color: var(--muted); margin-bottom: 2px;
+      color: var(--muted); line-height: 1;
     }
-    .cal-cell.today .day-num {
-      color: var(--accent); font-weight: 800;
-    }
+    .cal-cell.today .day-num { color: var(--accent); font-weight: 800; }
     .cal-cell .holiday-name {
-      font-size: 10px; font-weight: 700; color: var(--purple-holiday);
-      text-align: center; padding: 2px 4px;
-      background: oklch(93% 0.05 310 / 0.5);
-      border-radius: 4px; margin-bottom: 2px;
+      font-size: 9px; font-weight: 700; color: var(--purple-holiday);
+      text-align: center; padding: 1px 4px; line-height: 1.3;
+      background: oklch(93% 0.05 310 / 0.4);
+      border-radius: 3px;
     }
+    .cal-cell .cal-stat {
+      font-size: 10px; font-weight: 600; display: flex; align-items: center; gap: 4px;
+      line-height: 1.4;
+    }
+    .cal-cell .cal-stat.present { color: var(--green-present); }
+    .cal-cell .cal-stat.leave   { color: var(--blue-annual); }
+    .cal-cell .cal-stat.absent  { color: var(--red-absent); }
 
-    /* Employee badges */
-    .badge {
-      font-size: 10px; padding: 3px 6px; border-radius: 4px;
-      color: #fff; display: flex; align-items: center; gap: 4px;
-      font-weight: 600; overflow: hidden; white-space: nowrap;
-      text-overflow: ellipsis; cursor: default;
-      transition: opacity 0.2s;
+    /* Day Detail Modal */
+    .day-modal-overlay {
+      position: fixed; inset: 0; z-index: 50;
+      background: rgba(0,0,0,0.35); backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px; opacity: 0; pointer-events: none;
+      transition: opacity 0.25s;
     }
-    .badge:hover { opacity: 0.85; }
-    .badge.bg-present { background-color: var(--green-present); }
-    .badge.bg-absent { background-color: var(--red-absent); }
-    .badge.bg-al { background-color: var(--blue-annual); }
-    .badge.bg-mc { background-color: var(--yellow-medical); }
-    .badge.bg-ul { background-color: var(--gray-unpaid); }
-    .badge.bg-holiday { background-color: var(--purple-holiday); }
-    .badge.filtered-out { display: none; }
-
-    .cal-cell .more-indicator {
-      font-size: 10px; color: var(--muted); text-align: center;
-      font-weight: 600; cursor: pointer;
+    .day-modal-overlay.open { opacity: 1; pointer-events: auto; }
+    .day-modal {
+      background: var(--surface-solid); border-radius: var(--radius-xl);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+      padding: 24px; max-width: 520px; width: 100%; max-height: 80vh;
+      display: flex; flex-direction: column; gap: 14px;
+      transform: translateY(20px); transition: transform 0.3s;
     }
+    .day-modal-overlay.open .day-modal { transform: translateY(0); }
+    .day-modal-header { display: flex; align-items: center; justify-content: space-between; }
+    .day-modal-title { font-family: var(--font-display); font-size: 17px; font-weight: 700; }
+    .day-modal-close { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border-subtle); background: none; cursor: pointer; font-size: 16px; display: grid; place-items: center; }
+    .day-modal-stats { display: flex; gap: 16px; }
+    .day-modal-stat { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; }
+    .day-modal-list { display: flex; flex-direction: column; gap: 4px; max-height: 400px; overflow-y: auto; }
+    .day-modal-row { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; font-size: 12px; }
+    .day-modal-row:nth-child(odd) { background: rgba(0,0,0,0.015); }
+    .day-modal-row .dm-name { flex: 1; font-weight: 600; }
+    .day-modal-row .dm-status { font-size: 10px; padding: 2px 8px; border-radius: 999px; font-weight: 700; color: #fff; }
+    .day-modal-row .dm-status.present { background: var(--green-present); }
+    .day-modal-row .dm-status.absent { background: var(--red-absent); }
+    .day-modal-row .dm-status.leave { background: var(--blue-annual); }
 
     /* ============================================================
        LEGEND
@@ -428,9 +444,14 @@ $month_label = date('F Y', mktime(0, 0, 0, $month, 1, $year));
     }
     .cal-cell.empty-day:hover { box-shadow: none; border-color: transparent; }
 
+    /* ---- Bottom nav (mobile) ---- */
+    .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 30; height: 64px; background: oklch(98% 0.003 250 / 0.92); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border-top: 1px solid rgba(0,0,0,0.06); align-items: center; justify-content: space-around; padding: 0 8px; padding-bottom: env(safe-area-inset-bottom, 0px); }
+    .bottom-nav a { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 10px; border: none; background: none; font: 10px/1 var(--font-body); color: var(--muted); cursor: pointer; transition: color 0.15s; font-weight: 500; text-decoration: none; }
+    .bottom-nav a .nav-icon { font-size: 20px; line-height: 1; }
+    .bottom-nav a.active { color: var(--accent); font-weight: 700; }
+
     /* ---- Responsive ---- */
     @media (min-width: 640px) {
-      .page { padding: 0 20px 32px; }
       .topbar { padding: 16px 0 12px; }
       .topbar .title { font-size: 20px; }
       .stats-grid { grid-template-columns: repeat(4, 1fr); gap: 12px; }
@@ -442,7 +463,6 @@ $month_label = date('F Y', mktime(0, 0, 0, $month, 1, $year));
       .month-nav .month-label { font-size: 24px; min-width: 220px; }
     }
     @media (min-width: 1024px) {
-      .page { max-width: 1300px; padding: 0 32px 48px; gap: 22px; }
       .card { padding: 24px 28px; }
       .card-title { font-size: 17px; }
       .calendar-grid { gap: 6px; }
@@ -452,6 +472,8 @@ $month_label = date('F Y', mktime(0, 0, 0, $month, 1, $year));
       .stat-card .stat-value { font-size: 32px; }
       .legend-item { font-size: 12px; }
     }
+    @media (max-width: 800px) { .sidebar { width: 210px; min-width: 210px; } .main-inner { padding: 16px 12px 80px; } }
+    @media (max-width: 660px) { .sidebar { display: none; } .bottom-nav { display: flex; } .main-inner { padding: 14px 10px 80px; } }
 
     @media (max-width: 500px) {
       .calendar-grid { gap: 2px; }
@@ -465,7 +487,12 @@ $month_label = date('F Y', mktime(0, 0, 0, $month, 1, $year));
 </head>
 <body>
 
-  <div class="page">
+  <div class="app">
+    <?php include 'boss_sidebar.php'; ?>
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="page">
 
     <!-- Top bar -->
     <header class="topbar">
@@ -565,51 +592,53 @@ $month_label = date('F Y', mktime(0, 0, 0, $month, 1, $year));
             echo "<div class='cal-cell empty-day'></div>";
         }
 
+        // Store day detail data for JS modal
+        $day_details_json = [];
+
         for ($day = 1; $day <= $days_in_month; $day++) {
             $current_date = sprintf("%04d-%02d-%02d", $year, $month, $day);
             $is_today = ($current_date === $today_str);
             $is_holiday = isset($public_holidays[$current_date]);
             $holiday_name = $is_holiday ? $public_holidays[$current_date] : '';
 
+            // Count summary stats
+            $cnt_present = 0;
+            $cnt_leave = 0;
+            $cnt_absent = 0;
+            $day_records = [];
+
+            if (isset($attendance_data[$current_date])) {
+                foreach ($attendance_data[$current_date] as $record) {
+                    $stat = $record['status'];
+                    if (in_array($stat, ['on_time', 'grace_period', 'late'])) {
+                        $cnt_present++;
+                        $day_records[] = ['name' => $record['name'], 'status' => 'present'];
+                    } elseif ($stat === 'absent') {
+                        $cnt_absent++;
+                        $day_records[] = ['name' => $record['name'], 'status' => 'absent'];
+                    } elseif (strpos($stat, 'leave_') === 0) {
+                        $cnt_leave++;
+                        $day_records[] = ['name' => $record['name'], 'status' => 'leave'];
+                    }
+                }
+            }
+            $day_details_json[$current_date] = $day_records;
+
             $cell_class = 'cal-cell';
             if ($is_today) $cell_class .= ' today';
             if ($is_holiday) $cell_class .= ' has-holiday';
 
-            echo "<div class='$cell_class' data-date='$current_date'>";
+            echo "<div class='$cell_class' data-date='$current_date' onclick='openDayDetail(\"$current_date\")'>";
             echo "<div class='day-num'>$day</div>";
 
-            // Holiday name
             if ($is_holiday) {
                 echo "<div class='holiday-name'>🎌 " . htmlspecialchars($holiday_name) . "</div>";
             }
 
-            // Employee badges
-            if (isset($attendance_data[$current_date])) {
-                $max_show = 8; // Limit visible badges per day
-                $count = 0;
-                foreach ($attendance_data[$current_date] as $record) {
-                    if ($count >= $max_show) break;
-                    $name = htmlspecialchars($record['name']);
-                    $stat = $record['status'];
-
-                    if (in_array($stat, ['on_time', 'grace_period', 'late'])) {
-                        echo "<div class='badge bg-present' data-status='present' data-name='$name' title='$name — Present'>✓ $name</div>";
-                    } elseif ($stat === 'absent') {
-                        echo "<div class='badge bg-absent' data-status='absent' data-name='$name' title='$name — Absent'>✕ $name</div>";
-                    } elseif ($stat === 'leave_AL') {
-                        echo "<div class='badge bg-al' data-status='leave' data-name='$name' title='$name — Annual Leave'>🏖️ $name</div>";
-                    } elseif ($stat === 'leave_MC') {
-                        echo "<div class='badge bg-mc' data-status='leave' data-name='$name' title='$name — Medical Leave'>🏥 $name</div>";
-                    } elseif ($stat === 'leave_UL') {
-                        echo "<div class='badge bg-ul' data-status='leave' data-name='$name' title='$name — Unpaid Leave'>📅 $name</div>";
-                    }
-                    $count++;
-                }
-                $total_records = count($attendance_data[$current_date]);
-                if ($total_records > $max_show) {
-                    $remaining = $total_records - $max_show;
-                    echo "<div class='more-indicator'>+$remaining more</div>";
-                }
+            if ($cnt_present + $cnt_leave + $cnt_absent > 0) {
+                echo "<div class='cal-stat present'>✓ $cnt_present Present</div>";
+                if ($cnt_leave > 0) echo "<div class='cal-stat leave'>🏖️ $cnt_leave Leave</div>";
+                if ($cnt_absent > 0) echo "<div class='cal-stat absent'>✕ $cnt_absent Absent</div>";
             }
 
             echo "</div>";
@@ -628,62 +657,88 @@ $month_label = date('F Y', mktime(0, 0, 0, $month, 1, $year));
       </div>
     </section>
 
+        </div><!-- /.page -->
+      </div><!-- /.main-inner -->
+    </main>
+  </div><!-- /.app -->
+
+  <!-- Day Detail Modal -->
+  <div class="day-modal-overlay" id="day-modal-overlay">
+    <div class="day-modal">
+      <div class="day-modal-header">
+        <span class="day-modal-title" id="dm-title">—</span>
+        <button class="day-modal-close" onclick="closeDayDetail()">✕</button>
+      </div>
+      <div class="day-modal-stats" id="dm-stats"></div>
+      <div class="day-modal-list" id="dm-list"></div>
+    </div>
   </div>
 
+  <nav class="bottom-nav">
+    <a href="admin_dashboard.php"><span class="nav-icon">📋</span>Approvals</a>
+    <a href="master_calendar.php" class="active"><span class="nav-icon">📅</span>Calendar</a>
+    <a href="store_admin.php"><span class="nav-icon">🎁</span>Store</a>
+    <a href="../logout.php"><span class="nav-icon">🚪</span>Logout</a>
+  </nav>
+
   <script>
-    /* ---- DOM refs ---- */
     const $ = (s) => document.querySelector(s);
     const $$ = (s) => document.querySelectorAll(s);
 
-    let activeFilter = 'all';
-    let activeEmployee = 'all';
+    /* ---- Day detail data from PHP ---- */
+    const dayDetails = <?= json_encode($day_details_json) ?>;
 
-    /* ---- Filter chips ---- */
-    function applyFilters() {
-      const allBadges = $$('.badge');
+    /* ---- Day Detail Modal ---- */
+    function openDayDetail(dateStr) {
+      const records = dayDetails[dateStr] || [];
+      const d = new Date(dateStr + 'T00:00:00');
+      const dateLabel = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 
-      allBadges.forEach(badge => {
-        const status = badge.dataset.status; // 'present', 'absent', 'leave'
-        const name = badge.dataset.name;
-        let visible = true;
+      let present = 0, leave = 0, absent = 0;
+      let rowsHtml = '';
 
-        // Status filter
-        if (activeFilter !== 'all' && status !== activeFilter) {
-          visible = false;
-        }
+      records.forEach(r => {
+        if (r.status === 'present') present++;
+        else if (r.status === 'leave') leave++;
+        else absent++;
 
-        // Employee filter
-        if (activeEmployee !== 'all' && name !== activeEmployee) {
-          visible = false;
-        }
-
-        badge.classList.toggle('filtered-out', !visible);
+        const statusLabel = r.status === 'present' ? 'Present' : (r.status === 'leave' ? 'Leave' : 'Absent');
+        rowsHtml += `<div class="day-modal-row">
+          <span class="dm-name">${r.name}</span>
+          <span class="dm-status ${r.status}">${statusLabel}</span>
+        </div>`;
       });
 
-      // Update more-indicator counts
-      $$('.cal-cell').forEach(cell => {
-        const badges = cell.querySelectorAll('.badge');
-        const visibleBadges = cell.querySelectorAll('.badge:not(.filtered-out)');
-        const moreIndicator = cell.querySelector('.more-indicator');
-        if (moreIndicator) {
-          // Hide more-indicator when filtering
-          moreIndicator.style.display = (activeFilter !== 'all' || activeEmployee !== 'all') ? 'none' : '';
-        }
-      });
+      if (rowsHtml === '') {
+        rowsHtml = '<div style="text-align:center;padding:20px;color:var(--muted);">No attendance records for this day.</div>';
+      }
+
+      document.getElementById('dm-title').textContent = '📅 ' + dateLabel;
+      document.getElementById('dm-stats').innerHTML =
+        `<div class="day-modal-stat" style="color:var(--green-status);">✓ ${present} Present</div>` +
+        `<div class="day-modal-stat" style="color:var(--blue-annual);">🏖️ ${leave} Leave</div>` +
+        `<div class="day-modal-stat" style="color:var(--red-status);">✕ ${absent} Absent</div>`;
+      document.getElementById('dm-list').innerHTML = rowsHtml;
+      document.getElementById('day-modal-overlay').classList.add('open');
     }
 
+    function closeDayDetail() {
+      document.getElementById('day-modal-overlay').classList.remove('open');
+    }
+
+    document.getElementById('day-modal-overlay').addEventListener('click', function(e) {
+      if (e.target === this) closeDayDetail();
+    });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeDayDetail();
+    });
+
+    /* ---- Filter chips ---- */
     $$('#filter-chips .filter-chip').forEach(chip => {
       chip.addEventListener('click', function() {
         $$('#filter-chips .filter-chip').forEach(c => c.classList.remove('active'));
         this.classList.add('active');
-        activeFilter = this.dataset.filter;
-        applyFilters();
       });
-    });
-
-    $('#employee-filter').addEventListener('change', function() {
-      activeEmployee = this.value;
-      applyFilters();
     });
 
     /* ---- Rate ring animation ---- */

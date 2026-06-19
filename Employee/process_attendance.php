@@ -24,6 +24,14 @@ if ($action === 'check_in') {
         exit();
     }
 
+    // 1b. Check if employee is on approved leave today
+    $stmt = $pdo->prepare("SELECT id, leave_type FROM leave_requests WHERE user_id = ? AND status = 'approved' AND start_date <= ? AND end_date >= ? LIMIT 1");
+    $stmt->execute([$user_id, $date_today, $date_today]);
+    if ($stmt->fetch()) {
+        echo json_encode(['success' => false, 'message' => 'You are currently on approved leave. Check-in is not allowed.']);
+        exit();
+    }
+
     // 2. Determine Time & Base Status
     $status = 'absent';
     $base_points = -2;
