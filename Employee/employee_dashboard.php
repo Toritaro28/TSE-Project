@@ -77,6 +77,17 @@ $on_leave_today = $stmt->fetch();
 $is_on_approved_leave = $on_leave_today ? true : false;
 $on_leave_type = $on_leave_today ? $on_leave_today['leave_type'] : '';
 
+// Check if today is a weekend or public holiday
+$day_of_week = (int)date('N');
+$is_weekend = ($day_of_week >= 6);
+$stmt = $pdo->prepare("SELECT id, holiday_name FROM public_holidays WHERE holiday_date = ? LIMIT 1");
+$stmt->execute([$date_today]);
+$holiday_today = $stmt->fetch();
+$is_public_holiday = (bool)$holiday_today;
+$holiday_name = $holiday_today ? $holiday_today['holiday_name'] : '';
+$is_non_working_day = $is_weekend || $is_public_holiday;
+$non_working_reason = $is_public_holiday ? "🎌 $holiday_name" : 'Weekend';
+
 // ============================================================
 // 5. Quick Summary Data
 // ============================================================
@@ -422,10 +433,25 @@ while ($row = $stmt->fetch()) {
           <div class="glass-card col-span-2">
             <div class="card-header">
               <div class="card-title">Today's Attendance</div>
-              <span style="font-size:12px;font-weight:600;color:<?= $has_checked_in ? 'var(--green-status)' : ($is_on_approved_leave ? 'var(--blue-info)' : 'var(--red-status)') ?>;"><?= $has_checked_in ? ($has_checked_out ? '✅ Shift Completed' : '✅ Checked In') : ($is_on_approved_leave ? '🏖️ On Approved Leave' : '⚠️ Not Checked In') ?></span>
+              <?php
+                if ($has_checked_in) {
+                    $badge_text = $has_checked_out ? '✅ Shift Completed' : '✅ Checked In';
+                    $badge_color = 'var(--green-status)';
+                } elseif ($is_on_approved_leave) {
+                    $badge_text = '🏖️ On Approved Leave';
+                    $badge_color = 'var(--blue-info)';
+                } elseif ($is_non_working_day) {
+                    $badge_text = $is_public_holiday ? "🎌 $holiday_name" : '📴 Weekend';
+                    $badge_color = 'var(--purple-holiday)';
+                } else {
+                    $badge_text = '⚠️ Not Checked In';
+                    $badge_color = 'var(--red-status)';
+                }
+              ?>
+              <span style="font-size:12px;font-weight:600;color:<?= $badge_color ?>;"><?= $badge_text ?></span>
             </div>
             <div class="check-actions">
-              <button class="btn-check btn-check-in" id="btn-check-in" <?= ($has_checked_in || $is_on_approved_leave) ? 'disabled' : '' ?>><span class="btn-icon">✓</span> Check In<span class="btn-sub"><?= $is_on_approved_leave ? 'On Leave Today' : $check_in_time ?></span></button>
+              <button class="btn-check btn-check-in" id="btn-check-in" <?= ($has_checked_in || $is_on_approved_leave || $is_non_working_day) ? 'disabled' : '' ?>><span class="btn-icon">✓</span> Check In<span class="btn-sub"><?= $is_on_approved_leave ? 'On Leave Today' : ($is_non_working_day ? $non_working_reason : $check_in_time) ?></span></button>
               <button class="btn-check btn-check-out" id="btn-check-out" <?= (!$has_checked_in || $has_checked_out) ? 'disabled' : '' ?>><span class="btn-icon">↩</span> Check Out<span class="btn-sub"><?= $check_out_time ?></span></button>
             </div>
             <div class="check-status-row">

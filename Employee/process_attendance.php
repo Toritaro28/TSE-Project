@@ -32,6 +32,20 @@ if ($action === 'check_in') {
         exit();
     }
 
+    // 1c. Check if today is a weekend or public holiday (streak pause)
+    $day_of_week = (int)date('N', strtotime($date_today)); // 1=Mon...6=Sat,7=Sun
+    $is_weekend = ($day_of_week >= 6);
+
+    $stmt = $pdo->prepare("SELECT id FROM public_holidays WHERE holiday_date = ? LIMIT 1");
+    $stmt->execute([$date_today]);
+    $is_holiday = (bool)$stmt->fetch();
+
+    if ($is_weekend || $is_holiday) {
+        $reason = $is_holiday ? 'public holiday' : 'weekend';
+        echo json_encode(['success' => false, 'message' => "Check-in is not available — today is a $reason. Your streak is preserved."]);
+        exit();
+    }
+
     // 2. Determine Time & Base Status
     $status = 'absent';
     $base_points = -2;
