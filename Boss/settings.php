@@ -152,7 +152,7 @@ $gps_validation_enabled = (int)($stmt->fetchColumn() ?: 0);
     .sidebar-user .user-role { font-size: 10px; color: var(--sidebar-muted); }
 
     .main { flex: 1; overflow-y: auto; overflow-x: hidden; background: var(--bg-gradient); display: flex; flex-direction: column; }
-    .main-inner { padding: 24px 30px 36px; display: flex; flex-direction: column; gap: 20px; max-width: 700px; width: 100%; }
+    .main-inner { padding: 24px 30px 36px; display: flex; flex-direction: column; gap: 20px; max-width: 900px; width: 100%; }
 
     .topbar { display: flex; align-items: center; gap: 10px; }
     .topbar .title { font-family: var(--font-display); font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
@@ -338,12 +338,7 @@ $gps_validation_enabled = (int)($stmt->fetchColumn() ?: 0);
     </main>
   </div>
 
-  <nav class="bottom-nav">
-    <a href="admin_dashboard.php"><span class="nav-icon">📋</span>Approvals</a>
-    <a href="master_calendar.php"><span class="nav-icon">📅</span>Calendar</a>
-    <a href="store_admin.php"><span class="nav-icon">🎁</span>Store</a>
-    <a href="../logout.php"><span class="nav-icon">🚪</span>Logout</a>
-  </nav>
+  <?php include 'boss_bottom_nav.php'; ?>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
