@@ -184,6 +184,13 @@ $month_label = date('F Y', mktime(0, 0, 0, $month, 1, $year));
       font-family: var(--font-display); font-size: 18px; font-weight: 700;
       letter-spacing: -0.02em; white-space: nowrap;
     }
+    .topbar .admin-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 12px; border-radius: 999px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.02em;
+      background: oklch(92% 0.04 310); color: oklch(38% 0.1 310);
+      white-space: nowrap;
+    }
     .topbar .today-btn {
       padding: 8px 16px; border-radius: 999px;
       border: 1.5px solid var(--accent); background: transparent;
@@ -497,8 +504,8 @@ $month_label = date('F Y', mktime(0, 0, 0, $month, 1, $year));
     <!-- Top bar -->
     <header class="topbar">
       <div class="topbar-left">
-        <a class="back-btn" href="admin_dashboard.php" aria-label="Back">←</a>
         <span class="title">📅 Master Calendar</span>
+        <span class="admin-badge">👑 Admin</span>
       </div>
       <a class="today-btn" href="?m=<?= date('m') ?>&y=<?= date('Y') ?>">Today</a>
     </header>
@@ -674,12 +681,7 @@ $month_label = date('F Y', mktime(0, 0, 0, $month, 1, $year));
     </div>
   </div>
 
-  <nav class="bottom-nav">
-    <a href="admin_dashboard.php"><span class="nav-icon">📋</span>Approvals</a>
-    <a href="master_calendar.php" class="active"><span class="nav-icon">📅</span>Calendar</a>
-    <a href="store_admin.php"><span class="nav-icon">🎁</span>Store</a>
-    <a href="../logout.php"><span class="nav-icon">🚪</span>Logout</a>
-  </nav>
+  <?php include 'boss_bottom_nav.php'; ?>
 
   <script>
     const $ = (s) => document.querySelector(s);

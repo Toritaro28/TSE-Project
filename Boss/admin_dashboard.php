@@ -893,12 +893,7 @@ $requests_json = json_encode(array_values($requests_enriched));
   </div><!-- /.app -->
 
   <!-- Mobile bottom nav -->
-  <nav class="bottom-nav">
-    <a href="admin_dashboard.php" class="active"><span class="nav-icon">📋</span>Approvals</a>
-    <a href="master_calendar.php"><span class="nav-icon">📅</span>Calendar</a>
-    <a href="store_admin.php"><span class="nav-icon">🎁</span>Store</a>
-    <a href="../logout.php"><span class="nav-icon">🚪</span>Logout</a>
-  </nav>
+  <?php include 'boss_bottom_nav.php'; ?>
 
   <!-- ==========================================================
        SCRIPTS

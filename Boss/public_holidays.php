@@ -158,14 +158,14 @@ if ($edit_id) {
     .sidebar-user .user-role { font-size: 10px; color: var(--sidebar-muted); }
 
     .main { flex: 1; overflow-y: auto; overflow-x: hidden; background: var(--bg-gradient); display: flex; flex-direction: column; }
-    .main-inner { padding: 24px 30px 36px; display: flex; flex-direction: column; gap: 20px; max-width: 1100px; width: 100%; }
+    .main-inner { padding: 24px 30px 36px; display: flex; flex-direction: column; gap: 20px; max-width: 1200px; width: 100%; }
 
     .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
     .topbar .title { font-family: var(--font-display); font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
     .topbar .admin-badge { display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; background: oklch(92% 0.04 310); color: oklch(38% 0.1 310); }
 
-    .card { background: var(--surface-glass); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid var(--border-glass); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); padding: 20px 22px; display: flex; flex-direction: column; gap: 14px; transition: box-shadow 0.2s; }
-    .card:hover { box-shadow: var(--shadow-card-hover); }
+    .card { background: var(--surface-glass); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid var(--border-glass); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); padding: 22px 24px; display: flex; flex-direction: column; gap: 14px; transition: box-shadow 0.2s, background 0.2s; }
+    .card:hover { background: var(--surface-glass-hover); box-shadow: var(--shadow-card-hover); }
     .card-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
     .card-title { font-family: var(--font-display); font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
     .card-subtitle { font-size: 11px; color: var(--muted); }
@@ -376,13 +376,7 @@ if ($edit_id) {
     </main>
   </div>
 
-  <nav class="bottom-nav">
-    <a href="admin_dashboard.php"><span class="nav-icon">📋</span>Approvals</a>
-    <a href="master_calendar.php"><span class="nav-icon">📅</span>Calendar</a>
-    <a href="store_admin.php"><span class="nav-icon">🎁</span>Store</a>
-    <a href="analytics.php"><span class="nav-icon">📊</span>Analytics</a>
-    <a href="../logout.php"><span class="nav-icon">🚪</span>Logout</a>
-  </nav>
+  <?php include 'boss_bottom_nav.php'; ?>
 
   <script>
     function showToast(icon, msg, type) {

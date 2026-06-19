@@ -495,12 +495,7 @@ while ($row = $stmt->fetch()) {
   </div>
 
   <!-- Mobile bottom nav -->
-  <nav class="bottom-nav">
-    <a href="employee_dashboard.php" class="active"><span class="nav-icon">◈</span>Dashboard</a>
-    <a href="leave.php"><span class="nav-icon">📅</span>Leave</a>
-    <a href="rewards_store.php"><span class="nav-icon">🎁</span>Rewards</a>
-    <a href="../logout.php"><span class="nav-icon">🚪</span>Logout</a>
-  </nav>
+  <?php include 'employee_bottom_nav.php'; ?>
 
   <script>
     const $ = (s) => document.querySelector(s);

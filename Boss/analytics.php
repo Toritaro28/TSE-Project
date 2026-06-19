@@ -433,12 +433,6 @@ $top_streaks = $stmt->fetchAll();
     </main>
   </div>
 
-  <nav class="bottom-nav">
-    <a href="admin_dashboard.php"><span class="nav-icon">📋</span>Approvals</a>
-    <a href="master_calendar.php"><span class="nav-icon">📅</span>Calendar</a>
-    <a href="store_admin.php"><span class="nav-icon">🎁</span>Store</a>
-    <a href="analytics.php" class="active"><span class="nav-icon">📊</span>Analytics</a>
-    <a href="../logout.php"><span class="nav-icon">🚪</span>Logout</a>
-  </nav>
+  <?php include 'boss_bottom_nav.php'; ?>
 </body>
 </html>

@@ -249,6 +249,67 @@ while ($row = $stmt->fetch()) {
     @media (min-width: 1024px) { .card-title { font-size: 17px; } table { font-size: 14px; } }
     @media (max-width: 800px) { .sidebar { width: 210px; min-width: 210px; } .main-inner { padding: 16px 12px 80px; } }
     @media (max-width: 660px) { .sidebar { display: none; } .bottom-nav { display: flex; } .main-inner { padding: 14px 10px 80px; } .form-row { grid-template-columns: 1fr; } }
+
+    /* ---- Mobile: stacked card tables (≤768px) ---- */
+    @media (max-width: 768px) {
+      .table-wrap table,
+      .table-wrap thead,
+      .table-wrap tbody,
+      .table-wrap th,
+      .table-wrap td,
+      .table-wrap tr { display: block; }
+
+      .table-wrap thead tr { display: none; }
+
+      .table-wrap tbody tr {
+        background: var(--surface-solid);
+        border-radius: var(--radius-md);
+        padding: 12px 14px;
+        margin-bottom: 10px;
+        border: 1px solid var(--border-subtle);
+        box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+      }
+      .table-wrap tbody tr:last-child { margin-bottom: 0; }
+      .table-wrap tbody tr:hover { background: var(--surface-solid); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+
+      .table-wrap td {
+        padding: 5px 0;
+        border-bottom: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .table-wrap td::before {
+        content: attr(data-label);
+        font-size: 9px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        font-weight: 700;
+        min-width: 70px;
+        flex-shrink: 0;
+      }
+      .table-wrap td:first-child { padding-top: 0; }
+      .table-wrap td:last-child { padding-bottom: 0; border-bottom: none; }
+
+      /* Action buttons full-width */
+      .action-form {
+        display: flex !important;
+        flex-direction: column;
+        gap: 6px;
+        width: 100%;
+        margin-top: 4px;
+      }
+      .action-form .btn-sm {
+        width: 100%;
+        padding: 10px 14px !important;
+        font-size: 13px !important;
+        justify-content: center;
+        min-height: 40px;
+      }
+      td[data-label="Actions"]::before { display: none; }
+      td[data-label="Actions"] { padding-top: 8px; border-top: 1px solid var(--border-subtle); margin-top: 4px; }
+    }
   </style>
 </head>
 <body>
@@ -362,11 +423,11 @@ while ($row = $stmt->fetch()) {
                 <tbody>
                   <?php foreach ($pending_orders as $order): ?>
                   <tr>
-                    <td><strong><?= htmlspecialchars($order['user_name']) ?></strong></td>
-                    <td><?= htmlspecialchars($order['item_name']) ?></td>
-                    <td><?= number_format($order['points_spent']) ?> pts</td>
-                    <td>
-                      <form method="POST" style="display:inline-flex;gap:6px;">
+                    <td data-label="Employee"><strong><?= htmlspecialchars($order['user_name']) ?></strong></td>
+                    <td data-label="Item"><?= htmlspecialchars($order['item_name']) ?></td>
+                    <td data-label="Points"><?= number_format($order['points_spent']) ?> pts</td>
+                    <td data-label="Actions">
+                      <form method="POST" class="action-form">
                         <input type="hidden" name="redemption_id" value="<?= $order['id'] ?>">
                         <input type="hidden" name="process_order" value="1">
                         <button type="submit" name="action" value="complete" class="btn btn-success btn-sm">Complete</button>
@@ -398,11 +459,11 @@ while ($row = $stmt->fetch()) {
                   $has_refs = isset($ref_counts[$item['id']]);
                 ?>
                 <tr style="<?= !$item['is_active'] ? 'opacity:0.5;' : '' ?>">
-                  <td><strong><?= htmlspecialchars($item['name']) ?></strong><?= $has_refs ? ' <span style="font-size:10px;color:var(--muted);">(' . $ref_counts[$item['id']] . ' sold)</span>' : '' ?></td>
-                  <td>⭐ <?= number_format($item['points_required']) ?> pts</td>
-                  <td><?= $item['stock_quantity'] ?> left</td>
-                  <td><span class="status-badge <?= $item['is_active'] ? 'active' : 'inactive' ?>"><?= $item['is_active'] ? 'Active' : 'Hidden' ?></span></td>
-                  <td>
+                  <td data-label="Item"><strong><?= htmlspecialchars($item['name']) ?></strong><?= $has_refs ? ' <span style="font-size:10px;color:var(--muted);">(' . $ref_counts[$item['id']] . ' sold)</span>' : '' ?></td>
+                  <td data-label="Price">⭐ <?= number_format($item['points_required']) ?> pts</td>
+                  <td data-label="Stock"><?= $item['stock_quantity'] ?> left</td>
+                  <td data-label="Status"><span class="status-badge <?= $item['is_active'] ? 'active' : 'inactive' ?>"><?= $item['is_active'] ? 'Active' : 'Hidden' ?></span></td>
+                  <td data-label="Actions">
                     <form method="POST" style="display:inline-flex;gap:4px;">
                       <a href="?edit=<?= $item['id'] ?>" class="btn btn-ghost btn-sm">Edit</a>
                       <input type="hidden" name="item_id" value="<?= $item['id'] ?>">
@@ -423,12 +484,7 @@ while ($row = $stmt->fetch()) {
     </main>
   </div>
 
-  <nav class="bottom-nav">
-    <a href="admin_dashboard.php"><span class="nav-icon">📋</span>Approvals</a>
-    <a href="master_calendar.php"><span class="nav-icon">📅</span>Calendar</a>
-    <a href="store_admin.php" class="active"><span class="nav-icon">🎁</span>Store</a>
-    <a href="../logout.php"><span class="nav-icon">🚪</span>Logout</a>
-  </nav>
+  <?php include 'boss_bottom_nav.php'; ?>
 
   <script>
     function showToast(icon, msg, type) {

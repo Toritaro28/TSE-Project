@@ -75,6 +75,7 @@ foreach ($transactions as $t) {
     .app { display: flex; height: 100vh; width: 100%; }
 
     .sidebar { width: 250px; min-width: 250px; height: 100%; background: var(--sidebar-bg); color: var(--sidebar-fg); display: flex; flex-direction: column; padding: 26px 18px 18px; gap: 5px; z-index: 10; border-right: 1px solid rgba(255,255,255,0.06); }
+    @media (max-width: 800px) { .sidebar { width: 210px; min-width: 210px; } }
     .sidebar-brand { display: flex; align-items: center; gap: 11px; padding: 0 8px 24px; font-family: var(--font-display); font-size: 19px; font-weight: 700; letter-spacing: -0.02em; color: #fff; }
     .sidebar-brand .logo-icon { width: 38px; height: 38px; border-radius: 11px; background: linear-gradient(135deg, var(--accent), oklch(46% 0.15 158)); display: grid; place-items: center; font-size: 20px; }
     .sidebar-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
@@ -188,12 +189,6 @@ foreach ($transactions as $t) {
     </main>
   </div>
 
-  <nav class="bottom-nav">
-    <a href="employee_dashboard.php"><span class="nav-icon">◈</span>Dashboard</a>
-    <a href="leave.php"><span class="nav-icon">📅</span>Leave</a>
-    <a href="rewards_store.php"><span class="nav-icon">🎁</span>Rewards</a>
-    <a href="points_history.php" class="active"><span class="nav-icon">📊</span>Points</a>
-    <a href="../logout.php"><span class="nav-icon">🚪</span>Logout</a>
-  </nav>
+  <?php include 'employee_bottom_nav.php'; ?>
 </body>
 </html>

@@ -736,12 +736,7 @@ foreach ($orders as $o) {
   </div><!-- /.app -->
 
   <!-- Mobile bottom nav -->
-  <nav class="bottom-nav">
-    <a href="employee_dashboard.php"><span class="nav-icon">◈</span>Dashboard</a>
-    <a href="leave.php"><span class="nav-icon">📅</span>Leave</a>
-    <a href="rewards_store.php" class="active"><span class="nav-icon">🎁</span>Rewards</a>
-    <a href="../logout.php"><span class="nav-icon">🚪</span>Logout</a>
-  </nav>
+  <?php include 'employee_bottom_nav.php'; ?>
 
   <!-- Hidden form for modal redemption -->
   <form method="POST" id="redeem-form" style="display:none;">
