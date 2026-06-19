@@ -12,6 +12,7 @@ $nav_items = [
     ['page' => 'store',     'href' => 'store_admin.php',      'icon' => '🎁', 'label' => 'Store Manager'],
     ['page' => 'analytics', 'href' => 'analytics.php',         'icon' => '📊', 'label' => 'Analytics'],
     ['page' => 'holidays',  'href' => 'public_holidays.php',   'icon' => '🎌', 'label' => 'Public Holidays'],
+    ['page' => 'settings',  'href' => 'settings.php',          'icon' => '⚙️', 'label' => 'Settings'],
 ];
 ?>
 <aside class="sidebar">

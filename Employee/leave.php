@@ -39,7 +39,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['apply_leave'])) {
     }
 
     $days_requested = (strtotime($end_date) - strtotime($start_date)) / (60 * 60 * 24) + 1;
-    $max_date = date('Y-m-d', strtotime('+3 months'));
+    $stmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'leave_rolling_months'");
+$rolling_months = (int)($stmt->fetchColumn() ?: 3);
+$max_date = date('Y-m-d', strtotime("+{$rolling_months} months"));
 
     if ($start_date > $end_date) {
         $message = "End date cannot be before start date!";
