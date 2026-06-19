@@ -13,11 +13,14 @@ USE `attendance_db`;
 CREATE TABLE `users` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `name` VARCHAR(100) NOT NULL,
+    `username` VARCHAR(50) NOT NULL UNIQUE COMMENT 'Login identifier',
     `email` VARCHAR(150) NOT NULL UNIQUE,
     `password_hash` VARCHAR(255) NOT NULL,
     `role` ENUM('employee', 'admin') DEFAULT 'employee',
     `join_date` DATE NOT NULL,
     `remember_token` VARCHAR(255) NULL COMMENT 'For seamless QR code login',
+    `reset_token` VARCHAR(64) NULL COMMENT 'Password reset token',
+    `reset_token_expiry` DATETIME NULL COMMENT 'Reset token expiry (1 hour)',
     
     -- Gamification & Plant Evolution Variables
     `total_points` INT DEFAULT 0 COMMENT 'Currency for the Rewards Store',
@@ -166,27 +169,27 @@ CREATE TABLE `point_transactions` (
 
 
 -- insert users
-INSERT INTO `users` (`name`, `email`, `password_hash`, `role`, `join_date`) VALUES
+INSERT INTO `users` (`name`, `username`, `email`, `password_hash`, `role`, `join_date`) VALUES
 -- Admin (Boss)
-('John Tan', 'john.tan@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'admin', '2024-01-01'),
+('John Tan', 'john.tan', 'john.tan@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'admin', '2024-01-01'),
 
 -- Employees
-('Alice Lim', 'alice.lim@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-02-01'),
-('Brian Wong', 'brian.wong@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-02-05'),
-('Catherine Lee', 'catherine.lee@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-02-10'),
-('Daniel Ng', 'daniel.ng@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-02-15'),
-('Ethan Ong', 'ethan.ong@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-02-20'),
-('Fiona Chua', 'fiona.chua@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-03-01'),
-('George Tan', 'george.tan@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-03-05'),
-('Hannah Lim', 'hannah.lim@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-03-10'),
-('Ivan Lee', 'ivan.lee@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-03-15'),
-('Jessica Wong', 'jessica.wong@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-03-20'),
-('Kevin Ng', 'kevin.ng@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-04-01'),
-('Lily Tan', 'lily.tan@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-04-05'),
-('Michael Lim', 'michael.lim@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-04-10'),
-('Nicole Lee', 'nicole.lee@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-04-15'),
-('Oscar Wong', 'oscar.wong@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-04-20'),
-('Paul Ng', 'paul.ng@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-05-01'),
-('Queen Tan', 'queen.tan@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-05-05'),
-('Ryan Lim', 'ryan.lim@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-05-10'),
-('Sophia Lee', 'sophia.lee@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-05-15');
+('Alice Lim', 'alice.lim', 'alice.lim@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-02-01'),
+('Brian Wong', 'brian.wong', 'brian.wong@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-02-05'),
+('Catherine Lee', 'catherine.lee', 'catherine.lee@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-02-10'),
+('Daniel Ng', 'daniel.ng', 'daniel.ng@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-02-15'),
+('Ethan Ong', 'ethan.ong', 'ethan.ong@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-02-20'),
+('Fiona Chua', 'fiona.chua', 'fiona.chua@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-03-01'),
+('George Tan', 'george.tan', 'george.tan@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-03-05'),
+('Hannah Lim', 'hannah.lim', 'hannah.lim@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-03-10'),
+('Ivan Lee', 'ivan.lee', 'ivan.lee@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-03-15'),
+('Jessica Wong', 'jessica.wong', 'jessica.wong@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-03-20'),
+('Kevin Ng', 'kevin.ng', 'kevin.ng@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-04-01'),
+('Lily Tan', 'lily.tan', 'lily.tan@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-04-05'),
+('Michael Lim', 'michael.lim', 'michael.lim@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-04-10'),
+('Nicole Lee', 'nicole.lee', 'nicole.lee@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-04-15'),
+('Oscar Wong', 'oscar.wong', 'oscar.wong@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-04-20'),
+('Paul Ng', 'paul.ng', 'paul.ng@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-05-01'),
+('Queen Tan', 'queen.tan', 'queen.tan@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-05-05'),
+('Ryan Lim', 'ryan.lim', 'ryan.lim@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-05-10'),
+('Sophia Lee', 'sophia.lee', 'sophia.lee@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-05-15');

@@ -36,12 +36,12 @@ $error = '';
 
 // 3. Handle Form Submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = trim($_POST['email']);
+    $username = trim($_POST['username']);
     $password = $_POST['password'];
     $remember = isset($_POST['remember']);
 
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ? LIMIT 1");
-    $stmt->execute([$email]);
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ? LIMIT 1");
+    $stmt->execute([$username]);
     $user = $stmt->fetch();
 
     // Verify Password
@@ -341,11 +341,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
       <!-- Email -->
       <div class="form-group">
-        <label class="form-label" for="email">Email Address</label>
+        <label class="form-label" for="username">Username</label>
         <div class="form-input-wrap">
-          <input class="form-input" type="email" id="email" name="email"
-                 placeholder="you@company.com"
-                 autocomplete="email" required />
+          <input class="form-input" type="text" id="username" name="username"
+                 placeholder="your.username"
+                 autocomplete="username" required />
         </div>
         <span class="form-error-msg" id="email-error"></span>
       </div>
@@ -367,7 +367,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <input type="checkbox" id="remember" name="remember" />
           Remember me
         </label>
-        <a href="#" class="forgot-link" id="forgot-link">Forgot Password?</a>
+        <a href="forgot_password.php" class="forgot-link">Forgot Password?</a>
       </div>
 
       <!-- Login button -->
@@ -401,11 +401,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 (function() {
   const form = document.getElementById('login-form');
   const loginBtn = document.getElementById('login-btn');
-  const emailInput = document.getElementById('email');
+  const usernameInput = document.getElementById('username');
   const passwordInput = document.getElementById('password');
-  const emailError = document.getElementById('email-error');
+  const usernameError = document.getElementById('email-error');
   const passwordError = document.getElementById('password-error');
-  const forgotLink = document.getElementById('forgot-link');
   const ssoBtn = document.getElementById('sso-btn');
 
   // ---- TOAST ----
@@ -425,14 +424,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <?php endif; ?>
 
   // ---- VALIDATION ----
-  function validateEmail(email) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  }
-
   function clearErrors() {
-    emailInput.classList.remove('error','success');
+    usernameInput.classList.remove('error','success');
     passwordInput.classList.remove('error','success');
-    emailError.textContent = '';
+    usernameError.textContent = '';
     passwordError.textContent = '';
   }
 
@@ -447,27 +442,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   }
 
   // ---- Real-time validation ----
-  emailInput.addEventListener('blur', function() {
-    if (emailInput.value.trim() === '') {
-      emailInput.classList.add('error');
-      emailInput.classList.remove('success');
-      emailError.textContent = 'Email is required';
-    } else if (!validateEmail(emailInput.value.trim())) {
-      emailInput.classList.add('error');
-      emailInput.classList.remove('success');
-      emailError.textContent = 'Please enter a valid email address';
+  usernameInput.addEventListener('blur', function() {
+    if (usernameInput.value.trim() === '') {
+      usernameInput.classList.add('error');
+      usernameInput.classList.remove('success');
+      usernameError.textContent = 'Username is required';
     } else {
-      emailInput.classList.remove('error');
-      emailInput.classList.add('success');
-      emailError.textContent = '';
+      usernameInput.classList.remove('error');
+      usernameInput.classList.add('success');
+      usernameError.textContent = '';
     }
   });
 
-  emailInput.addEventListener('input', function() {
-    if (emailInput.classList.contains('error') && validateEmail(emailInput.value.trim())) {
-      emailInput.classList.remove('error');
-      emailInput.classList.add('success');
-      emailError.textContent = '';
+  usernameInput.addEventListener('input', function() {
+    if (usernameInput.classList.contains('error') && usernameInput.value.trim() !== '') {
+      usernameInput.classList.remove('error');
+      usernameInput.classList.add('success');
+      usernameError.textContent = '';
     }
   });
 
@@ -501,14 +492,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     let hasError = false;
 
-    // Validate email
-    if (emailInput.value.trim() === '') {
-      emailInput.classList.add('error');
-      emailError.textContent = 'Email is required';
-      hasError = true;
-    } else if (!validateEmail(emailInput.value.trim())) {
-      emailInput.classList.add('error');
-      emailError.textContent = 'Please enter a valid email address';
+    // Validate username
+    if (usernameInput.value.trim() === '') {
+      usernameInput.classList.add('error');
+      usernameError.textContent = 'Username is required';
       hasError = true;
     }
 
@@ -533,42 +520,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validation passed — show loading state, then let form submit to PHP
     setLoading(true);
 
-    // Store remembered email before submit
+    // Store remembered username before submit
     if (document.getElementById('remember').checked) {
-      try { localStorage.setItem('leafpoint_remembered_email', emailInput.value.trim()); } catch(_) {}
-    }
-  });
-
-  // ---- FORGOT PASSWORD ----
-  forgotLink.addEventListener('click', function(e) {
-    e.preventDefault();
-    const email = emailInput.value.trim();
-    if (email && validateEmail(email)) {
-      showToast('Password reset link sent to ' + email);
-    } else {
-      showToast('Please enter your email address first', 'error');
-      emailInput.focus();
+      try { localStorage.setItem('leafpoint_remembered_username', usernameInput.value.trim()); } catch(_) {}
     }
   });
 
   // ---- SSO ----
   ssoBtn.addEventListener('click', function() {
-    showToast('SSO is not configured yet. Please use email and password.');
+    showToast('SSO is not configured yet. Please use username and password.');
   });
 
-  // ---- Restore remembered email ----
+  // ---- Restore remembered username ----
   try {
-    const remembered = localStorage.getItem('leafpoint_remembered_email');
+    const remembered = localStorage.getItem('leafpoint_remembered_username');
     if (remembered) {
-      emailInput.value = remembered;
+      usernameInput.value = remembered;
       document.getElementById('remember').checked = true;
     }
   } catch(_) {}
 
-  // ---- Keyboard shortcut — Enter focuses email ----
+  // ---- Keyboard shortcut — Enter focuses username ----
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Enter' && document.activeElement === document.body) {
-      emailInput.focus();
+      usernameInput.focus();
     }
   });
 })();

@@ -13,11 +13,14 @@ USE `attendance_db`;
 CREATE TABLE `users` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `name` VARCHAR(100) NOT NULL,
+    `username` VARCHAR(50) NOT NULL UNIQUE COMMENT 'Login identifier',
     `email` VARCHAR(150) NOT NULL UNIQUE,
     `password_hash` VARCHAR(255) NOT NULL,
     `role` ENUM('employee', 'admin') DEFAULT 'employee',
     `join_date` DATE NOT NULL,
     `remember_token` VARCHAR(255) NULL,
+    `reset_token` VARCHAR(64) NULL COMMENT 'Password reset token',
+    `reset_token_expiry` DATETIME NULL COMMENT 'Reset token expiry (1 hour)',
     `total_points` INT DEFAULT 0,
     `current_streak` INT DEFAULT 0,
     `plant_highest_stage` INT DEFAULT 1,
@@ -154,27 +157,27 @@ CREATE TABLE `point_transactions` (
 -- ========================================================================
 -- USERS — 1 admin + 19 employees (IDs 1-20)
 -- ========================================================================
-INSERT INTO `users` (`id`, `name`, `email`, `password_hash`, `role`, `join_date`, `total_points`, `current_streak`, `plant_highest_stage`, `plant_current_stage`, `plant_status`) VALUES
-(1, 'John Tan', 'john.tan@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'admin', '2024-01-01', 0, 0, 1, 1, 'Healthy'),
-(2, 'Alice Lim', 'alice.lim@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-02-01', 9200, 72, 4, 4, 'Healthy'),
-(3, 'Brian Wong', 'brian.wong@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-02-05', 8500, 68, 4, 4, 'Healthy'),
-(4, 'Catherine Lee', 'catherine.lee@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-02-10', 10500, 82, 5, 5, 'Healthy'),
-(5, 'Daniel Ng', 'daniel.ng@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-02-15', 5400, 42, 3, 3, 'Healthy'),
-(6, 'Ethan Ong', 'ethan.ong@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-02-20', 2500, 0, 2, 1, 'Withered'),
-(7, 'Fiona Chua', 'fiona.chua@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-03-01', 6800, 6, 4, 3, 'Healthy'),
-(8, 'George Tan', 'george.tan@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-03-05', 18450, 130, 7, 7, 'Healthy'),
-(9, 'Hannah Lim', 'hannah.lim@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-03-10', 16200, 125, 7, 7, 'Healthy'),
-(10, 'Ivan Lee', 'ivan.lee@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-03-15', 14100, 110, 6, 6, 'Healthy'),
-(11, 'Jessica Wong', 'jessica.wong@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-03-20', 13500, 105, 6, 6, 'Healthy'),
-(12, 'Kevin Ng', 'kevin.ng@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-04-01', 11800, 90, 5, 5, 'Healthy'),
-(13, 'Lily Tan', 'lily.tan@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-04-05', 11200, 85, 5, 5, 'Healthy'),
-(14, 'Michael Lim', 'michael.lim@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-04-10', 8800, 70, 4, 4, 'Healthy'),
-(15, 'Nicole Lee', 'nicole.lee@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-04-15', 8200, 65, 4, 4, 'Healthy'),
-(16, 'Oscar Wong', 'oscar.wong@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-04-20', 6200, 50, 3, 3, 'Healthy'),
-(17, 'Paul Ng', 'paul.ng@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-05-01', 5800, 45, 3, 3, 'Healthy'),
-(18, 'Queen Tan', 'queen.tan@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-05-05', 3100, 3, 3, 2, 'Withered'),
-(19, 'Ryan Lim', 'ryan.lim@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-05-10', 3800, 25, 2, 2, 'Healthy'),
-(20, 'Sophia Lee', 'sophia.lee@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-05-15', 1200, 8, 1, 1, 'Healthy');
+INSERT INTO `users` (`id`, `name`, `username`, `email`, `password_hash`, `role`, `join_date`, `total_points`, `current_streak`, `plant_highest_stage`, `plant_current_stage`, `plant_status`) VALUES
+(1, 'John Tan', 'john.tan', 'john.tan@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'admin', '2024-01-01', 0, 0, 1, 1, 'Healthy'),
+(2, 'Alice Lim', 'alice.lim', 'alice.lim@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-02-01', 9200, 72, 4, 4, 'Healthy'),
+(3, 'Brian Wong', 'brian.wong', 'brian.wong@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-02-05', 8500, 68, 4, 4, 'Healthy'),
+(4, 'Catherine Lee', 'catherine.lee', 'catherine.lee@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-02-10', 10500, 82, 5, 5, 'Healthy'),
+(5, 'Daniel Ng', 'daniel.ng', 'daniel.ng@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-02-15', 5400, 42, 3, 3, 'Healthy'),
+(6, 'Ethan Ong', 'ethan.ong', 'ethan.ong@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-02-20', 2500, 0, 2, 1, 'Withered'),
+(7, 'Fiona Chua', 'fiona.chua', 'fiona.chua@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-03-01', 6800, 6, 4, 3, 'Healthy'),
+(8, 'George Tan', 'george.tan', 'george.tan@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-03-05', 18450, 130, 7, 7, 'Healthy'),
+(9, 'Hannah Lim', 'hannah.lim', 'hannah.lim@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-03-10', 16200, 125, 7, 7, 'Healthy'),
+(10, 'Ivan Lee', 'ivan.lee', 'ivan.lee@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-03-15', 14100, 110, 6, 6, 'Healthy'),
+(11, 'Jessica Wong', 'jessica.wong', 'jessica.wong@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-03-20', 13500, 105, 6, 6, 'Healthy'),
+(12, 'Kevin Ng', 'kevin.ng', 'kevin.ng@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-04-01', 11800, 90, 5, 5, 'Healthy'),
+(13, 'Lily Tan', 'lily.tan', 'lily.tan@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-04-05', 11200, 85, 5, 5, 'Healthy'),
+(14, 'Michael Lim', 'michael.lim', 'michael.lim@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-04-10', 8800, 70, 4, 4, 'Healthy'),
+(15, 'Nicole Lee', 'nicole.lee', 'nicole.lee@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-04-15', 8200, 65, 4, 4, 'Healthy'),
+(16, 'Oscar Wong', 'oscar.wong', 'oscar.wong@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-04-20', 6200, 50, 3, 3, 'Healthy'),
+(17, 'Paul Ng', 'paul.ng', 'paul.ng@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-05-01', 5800, 45, 3, 3, 'Healthy'),
+(18, 'Queen Tan', 'queen.tan', 'queen.tan@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-05-05', 3100, 3, 3, 2, 'Withered'),
+(19, 'Ryan Lim', 'ryan.lim', 'ryan.lim@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-05-10', 3800, 25, 2, 2, 'Healthy'),
+(20, 'Sophia Lee', 'sophia.lee', 'sophia.lee@company.com', '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG', 'employee', '2024-05-15', 1200, 8, 1, 1, 'Healthy');
 
 
 -- ========================================================================
