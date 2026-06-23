@@ -376,14 +376,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <span class="spinner"><span class="spinner-ring"></span></span>
       </button>
 
-      <!-- Divider -->
-      <div class="divider">or continue with</div>
-
-      <!-- SSO -->
-      <button type="button" class="sso-btn" id="sso-btn">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="1" y="1" width="22" height="22" rx="4" stroke="currentColor" stroke-width="1.5"/><path d="M19 12H5M12 5l-7 7 7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="17" cy="12" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg>
-        Single Sign-On
-      </button>
 
     </div>
   </form>
@@ -405,7 +397,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   const passwordInput = document.getElementById('password');
   const usernameError = document.getElementById('email-error');
   const passwordError = document.getElementById('password-error');
-  const ssoBtn = document.getElementById('sso-btn');
 
   // ---- TOAST ----
   function showToast(msg, type) {
@@ -524,11 +515,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (document.getElementById('remember').checked) {
       try { localStorage.setItem('leafpoint_remembered_username', usernameInput.value.trim()); } catch(_) {}
     }
-  });
-
-  // ---- SSO ----
-  ssoBtn.addEventListener('click', function() {
-    showToast('SSO is not configured yet. Please use username and password.');
   });
 
   // ---- Restore remembered username ----
